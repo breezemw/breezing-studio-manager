@@ -1,6 +1,6 @@
-import { renderDocumentCanvas } from './canvas-renderer.js?v=40acf6c';
-import { createExportEnvelope } from './schema.js?v=40acf6c';
-import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=40acf6c';
+import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-toolbar';
+import { createExportEnvelope } from './schema.js?v=20260522-toolbar';
+import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=20260522-toolbar';
 
 export async function handleExport(state, exportOptions = {}, setStatus = () => {}) {
   const format = exportOptions.format || 'pdf';
@@ -100,7 +100,7 @@ async function exportHtmlDocument(state, fileBaseName, openAfter) {
 <style>
 ${collectCssText()}
 body { background: #ffffff; padding: 24px; }
-.app-header, .control-panel, .preview-toolbar, .utility-row, .floating-controls, .modal-backdrop { display: none !important; }
+.app-header, .control-panel, .utility-row, .floating-controls, .modal-backdrop { display: none !important; }
 .document-stage { border: 0; background: #ffffff; }
 .document-page { margin: 0 auto; box-shadow: none; }
 </style>

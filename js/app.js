@@ -1,4 +1,4 @@
-import { initUi } from './ui.js?v=40acf6c';
+import { initUi } from './ui.js?v=20260522-toolbar';
 
 initUi().catch((error) => {
 	console.error('Studio manager failed to start', error);

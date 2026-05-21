@@ -1,12 +1,12 @@
-import { DEFAULT_LOGO_SRC, STORAGE_KEY, brandThemes, fontPresets, getTemplateVariant, logoPresets, studioPresets, templateVariants } from './config.js?v=40acf6c';
-import { applyTemplate, applyTemplateVariant, createBlankItem, duplicateCurrentDocument, getState, resetCurrentTemplate, setState } from './state.js?v=40acf6c';
-import { handleExport } from './exporter.js?v=40acf6c';
-import { renderDocumentCanvas } from './canvas-renderer.js?v=40acf6c';
-import { renderPreview } from './preview.js?v=40acf6c';
-import { createExportEnvelope, unwrapExportPayload, validateDocument } from './schema.js?v=40acf6c';
-import { getNextDocumentNumber, isIndexedDbAvailable, listVersions, loadDraft, loadVersion, saveDraft, saveVersion } from './storage.js?v=40acf6c';
-import { createBlankTeamMember, renderTeamEditorHtml } from './team.js?v=40acf6c';
-import { calculateTotals, cloneData, escapeHtml, fileToDataUrl, formatMoney, getFileBaseName, getItemTotal } from './utils.js?v=40acf6c';
+import { DEFAULT_LOGO_SRC, STORAGE_KEY, brandThemes, fontPresets, getTemplateVariant, logoPresets, studioPresets, templateVariants } from './config.js?v=20260522-toolbar';
+import { applyTemplate, applyTemplateVariant, createBlankItem, duplicateCurrentDocument, getState, resetCurrentTemplate, setState } from './state.js?v=20260522-toolbar';
+import { handleExport } from './exporter.js?v=20260522-toolbar';
+import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-toolbar';
+import { renderPreview } from './preview.js?v=20260522-toolbar';
+import { createExportEnvelope, unwrapExportPayload, validateDocument } from './schema.js?v=20260522-toolbar';
+import { getNextDocumentNumber, isIndexedDbAvailable, listVersions, loadDraft, loadVersion, saveDraft, saveVersion } from './storage.js?v=20260522-toolbar';
+import { createBlankTeamMember, renderTeamEditorHtml } from './team.js?v=20260522-toolbar';
+import { calculateTotals, cloneData, escapeHtml, fileToDataUrl, formatMoney, getFileBaseName, getItemTotal } from './utils.js?v=20260522-toolbar';
 
 const numericFields = new Set([
   'discount',
@@ -76,7 +76,6 @@ export async function initUi() {
 function collectElements() {
   return {
     documentPreview: document.querySelector('[data-document-preview]'),
-    previewName: document.querySelector('[data-preview-name]'),
     itemsEditor: document.querySelector('[data-items-editor]'),
     teamEditor: document.querySelector('[data-team-editor]'),
     statusMessage: document.querySelector('[data-status-message]'),
@@ -694,7 +693,7 @@ function syncTemplateVariantSelect(state) {
 function renderAll() {
   renderFrameId = 0;
   const state = getState();
-  renderPreview(state, elements.documentPreview, elements.previewName);
+  renderPreview(state, elements.documentPreview);
   syncExportFileName();
   renderAnalytics();
 }

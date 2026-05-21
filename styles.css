@@ -59,7 +59,6 @@ body.dark-mode {
 }
 
 body.dark-mode .app-header,
-body.dark-mode .preview-toolbar,
 body.dark-mode .panel-sticky-head,
 body.dark-mode .export-modal,
 body.dark-mode .command-modal,
@@ -713,24 +712,8 @@ h3 {
     #eef0f3;
 }
 
-.preview-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 14px;
-  border: 1px solid #d8dbe1;
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 12px 30px rgba(14, 39, 66, 0.08);
-  backdrop-filter: blur(12px);
-}
-
 .utility-row {
-  margin-top: 12px;
+  margin-top: 0;
   padding: 0 2px;
 }
 
@@ -1412,7 +1395,6 @@ body[data-preview-zoom="115"] .document-page {
   }
 
   .header-inner,
-  .preview-toolbar,
   .modal-header,
   .modal-actions {
     align-items: stretch;
@@ -1479,15 +1461,6 @@ body[data-preview-zoom="115"] .document-page {
 
   .preview-panel {
     padding: 12px 14px 24px;
-  }
-
-  .preview-toolbar {
-    gap: 10px;
-    padding: 12px;
-  }
-
-  .preview-toolbar h2 {
-    font-size: 1.05rem;
   }
 
   .utility-row {
@@ -1595,7 +1568,6 @@ body[data-preview-zoom="115"] .document-page {
 
   .app-header,
   .control-panel,
-  .preview-toolbar,
   .utility-row,
   .floating-controls,
   .modal-backdrop {

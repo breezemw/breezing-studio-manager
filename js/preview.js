@@ -1,6 +1,6 @@
-import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=40acf6c';
+import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=20260522-toolbar';
 
-export function renderPreview(state, documentPreview, previewName) {
+export function renderPreview(state, documentPreview) {
   if (!documentPreview) {
     return;
   }
@@ -27,10 +27,6 @@ export function renderPreview(state, documentPreview, previewName) {
   documentPreview.style.setProperty('--page-padding', `${Number(state.pagePadding) || 60}px`);
   documentPreview.style.setProperty('--doc-font-family', state.fontFamily || 'Arial, Helvetica, sans-serif');
   documentPreview.dataset.type = state.type;
-
-  if (previewName) {
-    previewName.textContent = `${state.title || 'Document'} ${state.number || ''}`.trim();
-  }
 
   const logoMarkup = state.logoSrc
     ? `<div class="doc-logo-row ${safeLogoAlign}"><img class="doc-logo" src="${escapeHtml(state.logoSrc)}" alt="${escapeHtml(state.business.name)} logo"></div>`

@@ -1,5 +1,5 @@
-import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, PREVIEW_DOCUMENT_WIDTH } from './config.js?v=40acf6c';
-import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js?v=40acf6c';
+import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, PREVIEW_DOCUMENT_WIDTH } from './config.js?v=20260522-toolbar';
+import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js?v=20260522-toolbar';
 
 let activeCanvasFontFamily = 'Arial, Helvetica, sans-serif';
 

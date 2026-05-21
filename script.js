@@ -1,1 +1,1 @@
-import './js/app.js?v=40acf6c';
+import './js/app.js?v=20260522-toolbar';

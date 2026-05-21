@@ -1,4 +1,4 @@
-import { escapeHtml } from './utils.js?v=40acf6c';
+import { escapeHtml } from './utils.js?v=20260522-toolbar';
 
 const defaultTeam = [
   { name: 'Team Member', role: 'Lead Photographer', phone: '', email: '', assignment: 'Coverage lead', status: 'Assigned' },
