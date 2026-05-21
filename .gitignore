@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Local document generation files and private generated documents.
+generate_invoices.py
+generate_quotation.py
+invoices/
+logo/

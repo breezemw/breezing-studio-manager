@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Internal Breezing Pictures studio document manager for invoices, quotations, inquiries, and receipts.">
+  <meta name="theme-color" content="#0e2742">
+  <title>Breezing Pictures Studio Manager</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="preload" as="image" href="assets/breezing-logo-web.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-panel-dock="left">
+  <a class="skip-link" href="#workspace">Skip to workspace</a>
+
+  <header class="app-header">
+    <div class="top-rule" aria-hidden="true"></div>
+    <div class="header-inner">
+      <a class="brand" href="#workspace" aria-label="Breezing Pictures Studio Manager">
+        <img src="assets/breezing-logo-web.png" alt="Breezing Pictures" width="720" height="194">
+        <span>
+          <strong>Studio Manager</strong>
+          <small>Invoices | Quotations | Inquiries | Receipts</small>
+        </span>
+      </a>
+
+      <div class="header-actions" aria-label="Document actions">
+        <button class="button button-soft" type="button" data-action="toggle-panel" aria-expanded="true" aria-controls="controlPanel">Controls</button>
+        <button class="button button-soft" type="button" data-action="reset-template">New</button>
+        <button class="button button-primary" type="button" data-action="open-export-modal">Export...</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell" id="workspace">
+    <aside class="control-panel" id="controlPanel" data-control-panel aria-label="Document controls">
+      <div class="panel-sticky-head">
+        <div>
+          <p class="eyebrow">Studio Workspace</p>
+          <h1>Customize document</h1>
+        </div>
+        <button class="icon-button neutral" type="button" data-action="toggle-panel" aria-label="Hide controls">x</button>
+      </div>
+
+      <nav class="panel-jump" aria-label="Editor sections">
+        <a href="#panel-document">Document</a>
+        <a href="#panel-client">Client</a>
+        <a href="#panel-items">Items</a>
+        <a href="#panel-style">Style</a>
+        <a href="#panel-images">Images</a>
+      </nav>
+
+      <section class="panel-section" id="panel-document">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Document Type</p>
+            <h2>Templates</h2>
+          </div>
+          <span class="internal-badge">Internal</span>
+        </div>
+
+        <div class="template-tabs" role="tablist" aria-label="Choose document type">
+          <button class="template-tab is-active" type="button" data-template="invoice">Invoice</button>
+          <button class="template-tab" type="button" data-template="quotation">Quotation</button>
+          <button class="template-tab" type="button" data-template="inquiry">Inquiry</button>
+          <button class="template-tab" type="button" data-template="receipt">Receipt</button>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <p class="eyebrow">Workspace Layout</p>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Control Placement</span>
+            <select data-layout-field="dock">
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+              <option value="bottom">Bottom</option>
+              <option value="hidden">Hidden</option>
+            </select>
+          </label>
+          <label>
+            <span>Preview Zoom</span>
+            <select data-layout-field="zoom">
+              <option value="fit">Fit</option>
+              <option value="90">90%</option>
+              <option value="100">100%</option>
+              <option value="115">115%</option>
+            </select>
+          </label>
+        </div>
+        <label class="checkbox-label">
+          <input type="checkbox" data-layout-field="compact">
+          <span>Compact editor spacing</span>
+        </label>
+      </section>
+
+      <section class="panel-section">
+        <p class="eyebrow">Document Details</p>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Title</span>
+            <input type="text" data-field="title">
+          </label>
+          <label>
+            <span>Subtitle</span>
+            <input type="text" data-field="subtitle">
+          </label>
+          <label>
+            <span>Number</span>
+            <input type="text" data-field="number">
+          </label>
+          <label>
+            <span>Reference</span>
+            <input type="text" data-field="reference">
+          </label>
+          <label>
+            <span>Date</span>
+            <input type="date" data-field="date">
+          </label>
+          <label>
+            <span>Due / Event Date</span>
+            <input type="date" data-field="dueDate">
+          </label>
+          <label>
+            <span>Status</span>
+            <input type="text" data-field="status">
+          </label>
+          <label>
+            <span>Currency</span>
+            <input type="text" data-field="currency" maxlength="8">
+          </label>
+          <label>
+            <span>Prepared By</span>
+            <input type="text" data-field="preparedBy">
+          </label>
+          <label>
+            <span>Payment Method</span>
+            <input type="text" data-field="paymentMethod">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel-section" id="panel-client">
+        <p class="eyebrow">Client Or Inquiry</p>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Client / Name</span>
+            <input type="text" data-field="clientName">
+          </label>
+          <label>
+            <span>Contact Person</span>
+            <input type="text" data-field="clientPerson">
+          </label>
+          <label>
+            <span>Phone</span>
+            <input type="text" data-field="clientPhone">
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" data-field="clientEmail">
+          </label>
+        </div>
+        <label>
+          <span>Address / Organization</span>
+          <input type="text" data-field="clientAddress">
+        </label>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Event / Purpose</span>
+            <input type="text" data-field="eventName">
+          </label>
+          <label>
+            <span>Venue</span>
+            <input type="text" data-field="venue">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel-section" id="panel-items">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Line Items</p>
+            <h2>Services and products</h2>
+          </div>
+          <button class="button button-soft" type="button" data-action="add-item">Add Item</button>
+        </div>
+        <div class="items-editor" data-items-editor></div>
+      </section>
+
+      <section class="panel-section">
+        <p class="eyebrow">Totals</p>
+        <div class="field-grid three-cols">
+          <label>
+            <span>Document Discount</span>
+            <input type="number" min="0" step="1" data-field="discount">
+          </label>
+          <label>
+            <span>Tax %</span>
+            <input type="number" min="0" step="0.01" data-field="taxRate">
+          </label>
+          <label>
+            <span>Paid</span>
+            <input type="number" min="0" step="1" data-field="amountPaid">
+          </label>
+          <label>
+            <span>Extra Charge</span>
+            <input type="number" min="0" step="1" data-field="extraCharge">
+          </label>
+          <label>
+            <span>Extra Label</span>
+            <input type="text" data-field="extraChargeLabel">
+          </label>
+          <label>
+            <span>Deposit Label</span>
+            <input type="text" data-field="paidLabel">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <p class="eyebrow">Notes</p>
+        <label>
+          <span>Intro / Message</span>
+          <textarea rows="3" data-field="intro"></textarea>
+        </label>
+        <label>
+          <span>Service Note</span>
+          <textarea rows="4" data-field="note"></textarea>
+        </label>
+        <label>
+          <span>Footer / Terms</span>
+          <textarea rows="3" data-field="terms"></textarea>
+        </label>
+      </section>
+
+      <section class="panel-section">
+        <p class="eyebrow">Labels And Sections</p>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Client Label</span>
+            <input type="text" data-label-field="client">
+          </label>
+          <label>
+            <span>Business Label</span>
+            <input type="text" data-label-field="business">
+          </label>
+          <label>
+            <span>Items Label</span>
+            <input type="text" data-label-field="items">
+          </label>
+          <label>
+            <span>Note Label</span>
+            <input type="text" data-label-field="note">
+          </label>
+          <label>
+            <span>Payment Label</span>
+            <input type="text" data-label-field="payment">
+          </label>
+          <label>
+            <span>Total Label</span>
+            <input type="text" data-label-field="total">
+          </label>
+        </div>
+        <div class="toggle-grid">
+          <label class="checkbox-label"><input type="checkbox" data-section-field="intro"><span>Intro</span></label>
+          <label class="checkbox-label"><input type="checkbox" data-section-field="client"><span>Client Card</span></label>
+          <label class="checkbox-label"><input type="checkbox" data-section-field="business"><span>Business Card</span></label>
+          <label class="checkbox-label"><input type="checkbox" data-section-field="items"><span>Items Table</span></label>
+          <label class="checkbox-label"><input type="checkbox" data-section-field="notes"><span>Notes</span></label>
+          <label class="checkbox-label"><input type="checkbox" data-section-field="payment"><span>Payment</span></label>
+          <label class="checkbox-label"><input type="checkbox" data-section-field="signature"><span>Signature</span></label>
+          <label class="checkbox-label"><input type="checkbox" data-section-field="footerBar"><span>Footer Bar</span></label>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <p class="eyebrow">Business Details</p>
+        <label>
+          <span>Business Name</span>
+          <input type="text" data-business-field="name">
+        </label>
+        <label>
+          <span>Services Line</span>
+          <input type="text" data-business-field="tagline">
+        </label>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Phone</span>
+            <input type="text" data-business-field="phone">
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" data-business-field="email">
+          </label>
+        </div>
+        <label>
+          <span>Website</span>
+          <input type="text" data-business-field="website">
+        </label>
+        <label>
+          <span>Location</span>
+          <input type="text" data-business-field="location">
+        </label>
+        <label>
+          <span>Google Maps</span>
+          <input type="text" data-business-field="maps">
+        </label>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Bank Name</span>
+            <input type="text" data-business-field="bank">
+          </label>
+          <label>
+            <span>Account</span>
+            <input type="text" data-business-field="account">
+          </label>
+        </div>
+        <label>
+          <span>Airtel Money</span>
+          <input type="text" data-business-field="airtel">
+        </label>
+      </section>
+
+      <section class="panel-section" id="panel-images">
+        <p class="eyebrow">Logo And Images</p>
+        <label class="file-control">
+          <span>Replace Logo</span>
+          <input type="file" accept="image/*" data-image-input="logo">
+        </label>
+        <div class="field-grid three-cols">
+          <label>
+            <span>Logo Width</span>
+            <input type="range" min="90" max="520" step="5" data-field="logoWidth">
+          </label>
+          <label>
+            <span>Logo Height</span>
+            <input type="range" min="40" max="180" step="5" data-field="logoMaxHeight">
+          </label>
+          <label>
+            <span>Logo Align</span>
+            <select data-field="logoAlign">
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </label>
+        </div>
+        <button class="button button-soft full-width" type="button" data-action="reset-logo">Restore Default Logo</button>
+
+        <label class="file-control spaced">
+          <span>Signature / Stamp Image</span>
+          <input type="file" accept="image/*" data-image-input="signature">
+        </label>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Signature Size</span>
+            <input type="range" min="60" max="360" step="5" data-field="signatureWidth">
+          </label>
+          <label class="checkbox-label"><input type="checkbox" data-field="showSignature"><span>Show Signature Image</span></label>
+        </div>
+
+        <label class="file-control spaced">
+          <span>Watermark / Background Image</span>
+          <input type="file" accept="image/*" data-image-input="watermark">
+        </label>
+        <div class="field-grid three-cols">
+          <label>
+            <span>Watermark Width</span>
+            <input type="range" min="120" max="700" step="10" data-field="watermarkWidth">
+          </label>
+          <label>
+            <span>Opacity</span>
+            <input type="range" min="0" max="0.25" step="0.01" data-field="watermarkOpacity">
+          </label>
+          <label class="checkbox-label"><input type="checkbox" data-field="showWatermark"><span>Show Watermark</span></label>
+        </div>
+      </section>
+
+      <section class="panel-section" id="panel-style">
+        <p class="eyebrow">Style</p>
+        <div class="field-grid three-cols">
+          <label>
+            <span>Accent</span>
+            <input type="color" data-field="accentColor">
+          </label>
+          <label>
+            <span>Dark</span>
+            <input type="color" data-field="darkColor">
+          </label>
+          <label>
+            <span>Paper</span>
+            <input type="color" data-field="paperColor">
+          </label>
+          <label>
+            <span>Soft Fill</span>
+            <input type="color" data-field="softColor">
+          </label>
+          <label>
+            <span>Text</span>
+            <input type="color" data-field="textColor">
+          </label>
+          <label>
+            <span>Line</span>
+            <input type="color" data-field="lineColor">
+          </label>
+        </div>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Font Scale</span>
+            <input type="range" min="0.82" max="1.16" step="0.01" data-field="fontScale">
+          </label>
+          <label>
+            <span>Page Padding</span>
+            <input type="range" min="36" max="82" step="2" data-field="pagePadding">
+          </label>
+        </div>
+      </section>
+    </aside>
+
+    <section class="preview-panel" aria-label="Live document preview">
+      <div class="preview-toolbar">
+        <div>
+          <p class="eyebrow">Live Preview</p>
+          <h2 data-preview-name>Invoice BP-2026-001</h2>
+        </div>
+        <div class="preview-actions" aria-label="Preview actions">
+          <button class="button button-soft" type="button" data-action="toggle-panel">Customize</button>
+          <button class="button button-soft" type="button" data-action="print">Print</button>
+          <button class="button button-primary" type="button" data-action="open-export-modal">Export...</button>
+        </div>
+      </div>
+
+      <div class="utility-row">
+        <button class="button button-soft" type="button" data-export="json">Save Backup</button>
+        <label class="button button-soft import-button">
+          Load Backup
+          <input type="file" accept="application/json,.json" data-import-json>
+        </label>
+        <span class="status-message" data-status-message role="status" aria-live="polite"></span>
+      </div>
+
+      <div class="document-stage">
+        <article class="document-page" id="documentPreview" data-document-preview aria-label="Document preview"></article>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" data-export-modal hidden>
+    <section class="export-modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Export Center</p>
+          <h2 id="exportTitle">Choose export options</h2>
+        </div>
+        <button class="icon-button neutral" type="button" data-action="close-export-modal" aria-label="Close export options">x</button>
+      </header>
+
+      <div class="export-layout">
+        <div class="export-card">
+          <h3>Format</h3>
+          <div class="format-grid" role="radiogroup" aria-label="Export format">
+            <label><input type="radio" name="exportFormat" value="pdf" checked><span>PDF</span></label>
+            <label><input type="radio" name="exportFormat" value="png"><span>PNG</span></label>
+            <label><input type="radio" name="exportFormat" value="jpeg"><span>JPEG</span></label>
+            <label><input type="radio" name="exportFormat" value="webp"><span>WebP</span></label>
+            <label><input type="radio" name="exportFormat" value="word"><span>Word</span></label>
+            <label><input type="radio" name="exportFormat" value="html"><span>HTML</span></label>
+            <label><input type="radio" name="exportFormat" value="json"><span>Backup JSON</span></label>
+            <label><input type="radio" name="exportFormat" value="print"><span>Print</span></label>
+          </div>
+        </div>
+
+        <div class="export-card">
+          <h3>File Options</h3>
+          <label>
+            <span>File Name</span>
+            <input type="text" data-export-option="fileName">
+          </label>
+          <div class="field-grid two-cols">
+            <label>
+              <span>Image Scale</span>
+              <select data-export-option="scale">
+                <option value="1">Fast 1x</option>
+                <option value="2" selected>Sharp 2x</option>
+                <option value="3">Ultra 3x</option>
+              </select>
+            </label>
+            <label>
+              <span>Quality</span>
+              <select data-export-option="quality">
+                <option value="0.82">Small</option>
+                <option value="0.92" selected>Balanced</option>
+                <option value="0.98">High</option>
+              </select>
+            </label>
+          </div>
+          <div class="toggle-grid">
+            <label class="checkbox-label"><input type="checkbox" data-export-option="includeBackground" checked><span>Paper background</span></label>
+            <label class="checkbox-label"><input type="checkbox" data-export-option="openAfter"><span>Open after export</span></label>
+            <label class="checkbox-label"><input type="checkbox" data-export-option="includeBackup"><span>Also save backup</span></label>
+            <label class="checkbox-label"><input type="checkbox" data-export-option="hideControls" checked><span>Hide app controls</span></label>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-actions">
+        <button class="button button-soft" type="button" data-action="close-export-modal">Cancel</button>
+        <button class="button button-primary" type="button" data-action="run-export">Export Selected</button>
+      </footer>
+    </section>
+  </div>
+
+  <button class="floating-controls" type="button" data-action="toggle-panel" aria-label="Open document controls">Controls</button>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
