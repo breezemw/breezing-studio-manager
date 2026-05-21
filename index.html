@@ -13,6 +13,22 @@
 <body data-panel-dock="left">
   <a class="skip-link" href="#workspace">Skip to workspace</a>
 
+  <section class="access-screen" data-access-screen aria-labelledby="accessTitle">
+    <div class="access-card">
+      <img src="assets/breezing-logo-web.png" alt="Breezing Pictures" width="720" height="194">
+      <p class="eyebrow">Studio Access</p>
+      <h1 id="accessTitle">Breezing Pictures Studio Manager</h1>
+      <form data-access-form>
+        <label>
+          <span>Access Code</span>
+          <input type="password" autocomplete="current-password" data-access-code>
+        </label>
+        <button class="button button-primary" type="submit">Open Studio Manager</button>
+      </form>
+      <p class="access-message" data-access-message role="alert"></p>
+    </div>
+  </section>
+
   <header class="app-header">
     <div class="top-rule" aria-hidden="true"></div>
     <div class="header-inner">

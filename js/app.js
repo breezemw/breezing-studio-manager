@@ -1,3 +1,4 @@
+import { ensureStudioAccess } from './access.js';
 import { initUi } from './ui.js';
 
-initUi();
+ensureStudioAccess(initUi);
