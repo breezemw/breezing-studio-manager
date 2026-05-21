@@ -1,6 +1,6 @@
-import { renderDocumentCanvas } from './canvas-renderer.js';
-import { createExportEnvelope } from './schema.js';
-import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js';
+import { renderDocumentCanvas } from './canvas-renderer.js?v=40acf6c';
+import { createExportEnvelope } from './schema.js?v=40acf6c';
+import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=40acf6c';
 
 export async function handleExport(state, exportOptions = {}, setStatus = () => {}) {
   const format = exportOptions.format || 'pdf';

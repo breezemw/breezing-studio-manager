@@ -1,4 +1,4 @@
-import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js';
+import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=40acf6c';
 
 export function renderPreview(state, documentPreview, previewName) {
   if (!documentPreview) {
