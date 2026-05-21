@@ -17,6 +17,8 @@ export function normalizeSchemaFields(state) {
   state.createdAt = state.createdAt || now;
   state.updatedAt = now;
   state.variantId = state.variantId || `${state.type || 'invoice'}-classic`;
+  state.variantStyle = state.variantStyle || 'classic';
+  state.paperSize = state.paperSize || 'F4';
   state.brandThemeId = state.brandThemeId || 'classic-gold';
   state.logoPresetId = state.logoPresetId || 'primary-logo';
   state.fontPresetId = state.fontPresetId || 'arial-system';

@@ -1,8 +1,28 @@
 export const DEFAULT_LOGO_SRC = 'assets/breezing-logo-web.png';
+// Paper geometry. Defaults match F4 (Foolscap Folio, 210mm x 330mm).
+// Width is shared with A4 so swapping paper sizes only changes the page height.
 export const BASE_DOCUMENT_WIDTH = 1240;
-export const BASE_DOCUMENT_HEIGHT = 1754;
+export const BASE_DOCUMENT_HEIGHT = 1949;
 export const PREVIEW_DOCUMENT_WIDTH = 794;
+export const PREVIEW_DOCUMENT_HEIGHT = 1248;
 export const STORAGE_KEY = 'breezing-studio-manager-layout';
+
+// Supported paper sizes. cssWidth/cssHeight drive the on-screen preview (96dpi),
+// canvasWidth/canvasHeight drive PNG/PDF rendering at ~150dpi, printSize feeds
+// the @page rule in the Word/print export.
+export const PAPER_SIZES = {
+  F4: { id: 'F4', name: 'F4 (210 × 330 mm)', cssWidth: 794, cssHeight: 1248, canvasWidth: 1240, canvasHeight: 1949, printSize: '210mm 330mm' },
+  A4: { id: 'A4', name: 'A4 (210 × 297 mm)', cssWidth: 794, cssHeight: 1123, canvasWidth: 1240, canvasHeight: 1754, printSize: 'A4' },
+  Letter: { id: 'Letter', name: 'Letter (8.5 × 11 in)', cssWidth: 816, cssHeight: 1056, canvasWidth: 1275, canvasHeight: 1650, printSize: 'letter' },
+};
+export const DEFAULT_PAPER_SIZE = 'F4';
+export function getPaperSize(id) {
+  return PAPER_SIZES[id] || PAPER_SIZES[DEFAULT_PAPER_SIZE];
+}
+
+// Built-in visual styles that template variants can opt into. The matching CSS
+// lives in styles.css under [data-variant-style="..."].
+export const VARIANT_STYLES = ['classic', 'modern', 'minimal', 'bold'];
 
 export const documentTypes = [
   { type: 'invoice', label: 'Invoice' },
@@ -101,6 +121,8 @@ export const sharedDocumentDefaults = {
   studioPresetId: 'breezing-core',
   fontFamily: 'Arial, Helvetica, sans-serif',
   sectionOrder: ['intro', 'cards', 'team', 'items', 'notes', 'signature'],
+  paperSize: DEFAULT_PAPER_SIZE,
+  variantStyle: 'classic',
   softColor: '#f6f6f4',
   textColor: '#111111',
   lineColor: '#d9d5c8',
@@ -267,34 +289,34 @@ export const templates = {
 
 export const templateVariants = {
   invoice: [
-    { id: 'invoice-classic', name: 'Classic Service Invoice', data: { title: 'INVOICE', status: 'PENDING PAYMENT', labels: { ...defaultLabels, client: 'BILL TO', items: 'SERVICE BREAKDOWN' } } },
-    { id: 'invoice-commercial', name: 'Commercial Production Invoice', data: { title: 'PRODUCTION INVOICE', subtitle: 'Commercial studio services', status: 'PAYMENT DUE', accentColor: '#4f7a8a', darkColor: '#18222c', labels: { ...defaultLabels, items: 'PRODUCTION CHARGES' } } },
-    { id: 'invoice-retainer', name: 'Retainer Invoice', data: { title: 'RETAINER INVOICE', subtitle: 'Booking confirmation and retainer', status: 'DEPOSIT REQUIRED', paymentMethod: 'Deposit required to confirm booking', labels: { ...defaultLabels, total: 'RETAINER DUE' } } },
-    { id: 'invoice-final', name: 'Final Balance Invoice', data: { title: 'FINAL INVOICE', status: 'BALANCE DUE', paidLabel: 'Deposit Received', labels: { ...defaultLabels, total: 'FINAL TOTAL' } } },
+    { id: 'invoice-classic', name: 'Classic Service Invoice', data: { title: 'INVOICE', status: 'PENDING PAYMENT', variantStyle: 'classic', labels: { ...defaultLabels, client: 'BILL TO', items: 'SERVICE BREAKDOWN' } } },
+    { id: 'invoice-commercial', name: 'Commercial Production Invoice', data: { title: 'PRODUCTION INVOICE', subtitle: 'Commercial studio services', status: 'PAYMENT DUE', variantStyle: 'modern', accentColor: '#4f7a8a', darkColor: '#18222c', labels: { ...defaultLabels, items: 'PRODUCTION CHARGES' } } },
+    { id: 'invoice-retainer', name: 'Retainer Invoice', data: { title: 'RETAINER INVOICE', subtitle: 'Booking confirmation and retainer', status: 'DEPOSIT REQUIRED', variantStyle: 'minimal', paymentMethod: 'Deposit required to confirm booking', labels: { ...defaultLabels, total: 'RETAINER DUE' } } },
+    { id: 'invoice-final', name: 'Final Balance Invoice', data: { title: 'FINAL INVOICE', status: 'BALANCE DUE', variantStyle: 'bold', paidLabel: 'Deposit Received', labels: { ...defaultLabels, total: 'FINAL TOTAL' } } },
   ],
   quotation: [
-    { id: 'quotation-equipment', name: 'Equipment Hire Quotation', data: { title: 'EQUIPMENT HIRE QUOTATION', labels: { ...defaultLabels, client: 'QUOTED TO', items: 'EQUIPMENT DESCRIPTION' } } },
-    { id: 'quotation-service', name: 'Service Proposal Quote', data: { title: 'SERVICE QUOTATION', subtitle: 'Studio service estimate', status: 'VALID FOR REVIEW', labels: { ...defaultLabels, items: 'SERVICE PROPOSAL' } } },
-    { id: 'quotation-event', name: 'Event Coverage Quote', data: { title: 'EVENT COVERAGE QUOTATION', status: 'VALID FOR EVENT DATE', accentColor: '#2e6b35', labels: { ...defaultLabels, items: 'COVERAGE PACKAGE' } } },
-    { id: 'quotation-retainer', name: 'Retainer Estimate', data: { title: 'RETAINER ESTIMATE', status: 'SUBJECT TO APPROVAL', labels: { ...defaultLabels, total: 'ESTIMATED TOTAL' } } },
+    { id: 'quotation-equipment', name: 'Equipment Hire Quotation', data: { title: 'EQUIPMENT HIRE QUOTATION', variantStyle: 'classic', labels: { ...defaultLabels, client: 'QUOTED TO', items: 'EQUIPMENT DESCRIPTION' } } },
+    { id: 'quotation-service', name: 'Service Proposal Quote', data: { title: 'SERVICE QUOTATION', subtitle: 'Studio service estimate', status: 'VALID FOR REVIEW', variantStyle: 'modern', labels: { ...defaultLabels, items: 'SERVICE PROPOSAL' } } },
+    { id: 'quotation-event', name: 'Event Coverage Quote', data: { title: 'EVENT COVERAGE QUOTATION', status: 'VALID FOR EVENT DATE', variantStyle: 'minimal', accentColor: '#2e6b35', labels: { ...defaultLabels, items: 'COVERAGE PACKAGE' } } },
+    { id: 'quotation-retainer', name: 'Retainer Estimate', data: { title: 'RETAINER ESTIMATE', status: 'SUBJECT TO APPROVAL', variantStyle: 'bold', labels: { ...defaultLabels, total: 'ESTIMATED TOTAL' } } },
   ],
   inquiry: [
-    { id: 'inquiry-standard', name: 'Standard Inquiry', data: { title: 'SERVICE INQUIRY', labels: { ...defaultLabels, client: 'INQUIRY FROM', items: 'REQUESTED SERVICES' } } },
-    { id: 'inquiry-booking', name: 'Booking Lead', data: { title: 'BOOKING INQUIRY', status: 'NEW BOOKING LEAD', labels: { ...defaultLabels, items: 'BOOKING REQUIREMENTS' } } },
-    { id: 'inquiry-equipment', name: 'Equipment Request', data: { title: 'EQUIPMENT INQUIRY', status: 'EQUIPMENT REQUEST', labels: { ...defaultLabels, items: 'REQUESTED EQUIPMENT' } } },
-    { id: 'inquiry-follow-up', name: 'Follow-up Sheet', data: { title: 'CLIENT FOLLOW-UP', status: 'FOLLOW-UP REQUIRED', labels: { ...defaultLabels, total: 'ESTIMATED VALUE' } } },
+    { id: 'inquiry-standard', name: 'Standard Inquiry', data: { title: 'SERVICE INQUIRY', variantStyle: 'classic', labels: { ...defaultLabels, client: 'INQUIRY FROM', items: 'REQUESTED SERVICES' } } },
+    { id: 'inquiry-booking', name: 'Booking Lead', data: { title: 'BOOKING INQUIRY', status: 'NEW BOOKING LEAD', variantStyle: 'modern', labels: { ...defaultLabels, items: 'BOOKING REQUIREMENTS' } } },
+    { id: 'inquiry-equipment', name: 'Equipment Request', data: { title: 'EQUIPMENT INQUIRY', status: 'EQUIPMENT REQUEST', variantStyle: 'minimal', labels: { ...defaultLabels, items: 'REQUESTED EQUIPMENT' } } },
+    { id: 'inquiry-follow-up', name: 'Follow-up Sheet', data: { title: 'CLIENT FOLLOW-UP', status: 'FOLLOW-UP REQUIRED', variantStyle: 'bold', labels: { ...defaultLabels, total: 'ESTIMATED VALUE' } } },
   ],
   receipt: [
-    { id: 'receipt-payment', name: 'Payment Receipt', data: { title: 'RECEIPT', labels: { ...defaultLabels, client: 'RECEIVED FROM', items: 'PAYMENT BREAKDOWN' } } },
-    { id: 'receipt-deposit', name: 'Deposit Receipt', data: { title: 'DEPOSIT RECEIPT', status: 'DEPOSIT RECEIVED', paidLabel: 'Deposit Received', labels: { ...defaultLabels, total: 'DEPOSIT TOTAL' } } },
-    { id: 'receipt-balance', name: 'Balance Receipt', data: { title: 'BALANCE RECEIPT', status: 'BALANCE RECEIVED', labels: { ...defaultLabels, total: 'BALANCE PAID' } } },
-    { id: 'receipt-refund', name: 'Refund Receipt', data: { title: 'REFUND RECEIPT', status: 'REFUND ISSUED', accentColor: '#4f7a8a', labels: { ...defaultLabels, items: 'REFUND BREAKDOWN', total: 'REFUND TOTAL' } } },
+    { id: 'receipt-payment', name: 'Payment Receipt', data: { title: 'RECEIPT', variantStyle: 'classic', labels: { ...defaultLabels, client: 'RECEIVED FROM', items: 'PAYMENT BREAKDOWN' } } },
+    { id: 'receipt-deposit', name: 'Deposit Receipt', data: { title: 'DEPOSIT RECEIPT', status: 'DEPOSIT RECEIVED', variantStyle: 'modern', paidLabel: 'Deposit Received', labels: { ...defaultLabels, total: 'DEPOSIT TOTAL' } } },
+    { id: 'receipt-balance', name: 'Balance Receipt', data: { title: 'BALANCE RECEIPT', status: 'BALANCE RECEIVED', variantStyle: 'minimal', labels: { ...defaultLabels, total: 'BALANCE PAID' } } },
+    { id: 'receipt-refund', name: 'Refund Receipt', data: { title: 'REFUND RECEIPT', status: 'REFUND ISSUED', variantStyle: 'bold', accentColor: '#4f7a8a', labels: { ...defaultLabels, items: 'REFUND BREAKDOWN', total: 'REFUND TOTAL' } } },
   ],
   correction: [
-    { id: 'correction-note', name: 'Correction Note', data: { title: 'CORRECTION NOTE', labels: { ...defaultLabels, client: 'ISSUED TO', items: 'CORRECTION DETAILS', total: 'ADJUSTMENT TOTAL' } } },
-    { id: 'correction-credit', name: 'Credit Note', data: { title: 'CREDIT NOTE', status: 'CREDIT ISSUED', accentColor: '#2e6b35', labels: { ...defaultLabels, items: 'CREDIT DETAILS', total: 'CREDIT TOTAL' } } },
-    { id: 'correction-revision', name: 'Revision Note', data: { title: 'REVISION NOTE', status: 'REVISED DOCUMENT', labels: { ...defaultLabels, items: 'REVISION DETAILS' } } },
-    { id: 'correction-cancel', name: 'Cancellation Note', data: { title: 'CANCELLATION NOTE', status: 'CANCELLED / VOIDED', accentColor: '#a13d2d', labels: { ...defaultLabels, items: 'CANCELLATION DETAILS' } } },
+    { id: 'correction-note', name: 'Correction Note', data: { title: 'CORRECTION NOTE', variantStyle: 'classic', labels: { ...defaultLabels, client: 'ISSUED TO', items: 'CORRECTION DETAILS', total: 'ADJUSTMENT TOTAL' } } },
+    { id: 'correction-credit', name: 'Credit Note', data: { title: 'CREDIT NOTE', status: 'CREDIT ISSUED', variantStyle: 'modern', accentColor: '#2e6b35', labels: { ...defaultLabels, items: 'CREDIT DETAILS', total: 'CREDIT TOTAL' } } },
+    { id: 'correction-revision', name: 'Revision Note', data: { title: 'REVISION NOTE', status: 'REVISED DOCUMENT', variantStyle: 'minimal', labels: { ...defaultLabels, items: 'REVISION DETAILS' } } },
+    { id: 'correction-cancel', name: 'Cancellation Note', data: { title: 'CANCELLATION NOTE', status: 'CANCELLED / VOIDED', variantStyle: 'bold', accentColor: '#a13d2d', labels: { ...defaultLabels, items: 'CANCELLATION DETAILS' } } },
   ],
 };
 

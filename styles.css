@@ -746,16 +746,39 @@ h3 {
   --watermark-opacity: 0.07;
   --font-scale: 1;
   --page-padding: 60px;
-  width: min(794px, 100%);
-  min-height: 1123px;
+  /* F4 (210x330mm) at 96dpi by default; overridden by [data-paper-size]. */
+  --doc-page-width: 794px;
+  --doc-page-height: 1248px;
+  width: min(var(--doc-page-width), 100%);
+  min-width: 0;
+  min-height: var(--doc-page-height);
   position: relative;
-  overflow: visible;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   padding: calc(var(--page-padding) - 6px) var(--page-padding) 46px;
   background: var(--doc-paper);
   color: var(--doc-text);
   font-family: var(--doc-font-family, Arial, Helvetica, sans-serif);
   box-shadow: var(--shadow);
   transform-origin: top center;
+}
+
+.document-page[data-paper-size="A4"] {
+  --doc-page-height: 1123px;
+}
+
+.document-page[data-paper-size="Letter"] {
+  --doc-page-width: 816px;
+  --doc-page-height: 1056px;
+}
+
+.document-page *,
+.document-page *::before,
+.document-page *::after {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 body[data-preview-zoom="90"] .document-page {
@@ -1039,6 +1062,7 @@ body[data-preview-zoom="115"] .document-page {
 
 .doc-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   overflow: hidden;
@@ -1051,6 +1075,7 @@ body[data-preview-zoom="115"] .document-page {
 .doc-note,
 .doc-payment {
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .doc-table th,
@@ -1059,6 +1084,8 @@ body[data-preview-zoom="115"] .document-page {
   border-top: 1px solid var(--doc-line);
   text-align: left;
   vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .doc-table th {
@@ -1558,8 +1585,12 @@ body[data-preview-zoom="115"] .document-page {
 
 @media print {
   @page {
-    size: A4;
+    size: 210mm 330mm;
     margin: 0;
+  }
+
+  .document-page[data-paper-size="A4"] {
+    /* keep print page following the document's selected paper size */
   }
 
   body {
@@ -1587,12 +1618,21 @@ body[data-preview-zoom="115"] .document-page {
 
   .document-page {
     width: 210mm;
-    min-height: 297mm;
-    overflow: visible;
+    min-height: 330mm;
+    overflow: hidden;
     transform: none !important;
     margin: 0 !important;
     box-shadow: none;
     page-break-after: avoid;
+  }
+
+  .document-page[data-paper-size="A4"] {
+    min-height: 297mm;
+  }
+
+  .document-page[data-paper-size="Letter"] {
+    width: 8.5in;
+    min-height: 11in;
   }
 
   .doc-card,
@@ -1603,4 +1643,134 @@ body[data-preview-zoom="115"] .document-page {
   .doc-signature-grid {
     break-inside: avoid;
   }
+}
+
+/* ===== Template variant styles ===========================================
+   Set on the document root via documentPreview.dataset.variantStyle.
+   Each style keeps the same DOM/layout but changes the visual shape so users
+   can switch between Classic / Modern / Minimal / Bold from the variant
+   picker. All overrides stay inside .document-page so nothing escapes the
+   page bounds.
+*/
+.document-page[data-variant-style="modern"] .doc-bars {
+  background: var(--doc-accent);
+  height: 8px;
+}
+.document-page[data-variant-style="modern"] .doc-rule {
+  background: transparent;
+  height: 1px;
+  margin: 18px 0 22px;
+}
+.document-page[data-variant-style="modern"] .doc-rule::before {
+  width: 64px;
+  height: 3px;
+  background: var(--doc-accent);
+  border-radius: 2px;
+}
+.document-page[data-variant-style="modern"] .doc-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 0 rgba(15, 27, 42, 0.04);
+}
+.document-page[data-variant-style="modern"] .doc-card::before {
+  height: 0;
+  width: 6px;
+  bottom: 0;
+  right: auto;
+  background: var(--doc-accent);
+  border-radius: 12px 0 0 12px;
+}
+.document-page[data-variant-style="modern"] .doc-table th {
+  background: var(--doc-accent);
+  color: #ffffff;
+}
+.document-page[data-variant-style="modern"] .doc-table tfoot .doc-grand-total td {
+  background: var(--doc-accent);
+  color: #ffffff;
+  border-top: 0;
+}
+.document-page[data-variant-style="modern"] .doc-table tfoot .doc-grand-total td:last-child {
+  color: #ffffff;
+}
+
+.document-page[data-variant-style="minimal"] .doc-bars,
+.document-page[data-variant-style="minimal"] .doc-footer-bar {
+  display: none;
+}
+.document-page[data-variant-style="minimal"] .doc-rule {
+  background: var(--doc-line);
+  height: 1px;
+}
+.document-page[data-variant-style="minimal"] .doc-rule::before {
+  display: none;
+}
+.document-page[data-variant-style="minimal"] .doc-card,
+.document-page[data-variant-style="minimal"] .doc-note,
+.document-page[data-variant-style="minimal"] .doc-payment {
+  border: 0;
+  border-top: 1px solid var(--doc-line);
+  border-radius: 0;
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+.document-page[data-variant-style="minimal"] .doc-card::before {
+  display: none;
+}
+.document-page[data-variant-style="minimal"] .doc-table {
+  border: 0;
+  border-radius: 0;
+}
+.document-page[data-variant-style="minimal"] .doc-table th {
+  background: transparent;
+  color: var(--doc-dark);
+  border-bottom: 2px solid var(--doc-dark);
+}
+.document-page[data-variant-style="minimal"] .doc-table tbody tr:nth-child(even) {
+  background: transparent;
+}
+.document-page[data-variant-style="minimal"] .doc-table tfoot td {
+  background: transparent;
+  border-top: 1px solid var(--doc-line);
+}
+.document-page[data-variant-style="minimal"] .doc-table tfoot .doc-grand-total td {
+  background: transparent;
+  color: var(--doc-dark);
+  border-top: 2px solid var(--doc-accent);
+}
+.document-page[data-variant-style="minimal"] .doc-table tfoot .doc-grand-total td:last-child {
+  color: var(--doc-accent);
+}
+
+.document-page[data-variant-style="bold"] .doc-bars {
+  height: 36px;
+  background: var(--doc-dark);
+}
+.document-page[data-variant-style="bold"] .doc-brand {
+  margin-top: 22px;
+}
+.document-page[data-variant-style="bold"] .doc-title {
+  letter-spacing: 0.02em;
+}
+.document-page[data-variant-style="bold"] .doc-rule {
+  background: var(--doc-dark);
+  height: 4px;
+}
+.document-page[data-variant-style="bold"] .doc-rule::before {
+  width: 100%;
+  height: 8px;
+  background: var(--doc-accent);
+}
+.document-page[data-variant-style="bold"] .doc-card,
+.document-page[data-variant-style="bold"] .doc-note,
+.document-page[data-variant-style="bold"] .doc-payment {
+  border-width: 2px;
+}
+.document-page[data-variant-style="bold"] .doc-card::before {
+  height: 10px;
+}
+.document-page[data-variant-style="bold"] .doc-table {
+  border-width: 2px;
+}
+.document-page[data-variant-style="bold"] .doc-table tfoot .doc-grand-total td {
+  border-top-width: 6px;
 }

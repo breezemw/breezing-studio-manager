@@ -508,6 +508,25 @@
             <input type="range" min="36" max="82" step="2" inputmode="decimal" data-field="pagePadding">
           </label>
         </div>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Paper Size</span>
+            <select data-field="paperSize">
+              <option value="F4">F4 (210 &times; 330 mm)</option>
+              <option value="A4">A4 (210 &times; 297 mm)</option>
+              <option value="Letter">Letter (8.5 &times; 11 in)</option>
+            </select>
+          </label>
+          <label>
+            <span>Variant Shape</span>
+            <select data-field="variantStyle">
+              <option value="classic">Classic</option>
+              <option value="modern">Modern</option>
+              <option value="minimal">Minimal</option>
+              <option value="bold">Bold</option>
+            </select>
+          </label>
+        </div>
       </section>
     </aside>
 
@@ -613,6 +632,6 @@
 
   <button class="floating-controls" type="button" data-action="toggle-panel" aria-label="Open document controls">Controls</button>
 
-  <script type="module" src="script.js?v=20260522-toolbar"></script>
+  <script type="module" src="script.js?v=20260522-f4"></script>
 </body>
 </html>

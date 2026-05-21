@@ -1,5 +1,5 @@
-import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, PREVIEW_DOCUMENT_WIDTH } from './config.js?v=20260522-toolbar';
-import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js?v=20260522-toolbar';
+import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, DEFAULT_PAPER_SIZE, PREVIEW_DOCUMENT_WIDTH, getPaperSize } from './config.js?v=20260522-f4';
+import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js?v=20260522-f4';
 
 let activeCanvasFontFamily = 'Arial, Helvetica, sans-serif';
 
@@ -128,7 +128,9 @@ function estimateCanvasHeight(state) {
   const signatureHeight = state.sections.signature ? 180 : 0;
   const fixedChromeHeight = 438;
   const estimatedHeight = fixedChromeHeight + infoHeight + teamHeight + introHeight + tableHeight + noteHeight + signatureHeight;
-  return Math.max(BASE_DOCUMENT_HEIGHT, Math.ceil(estimatedHeight + 90));
+  const paper = getPaperSize(state.paperSize || DEFAULT_PAPER_SIZE);
+  const minHeight = paper.canvasHeight || BASE_DOCUMENT_HEIGHT;
+  return Math.max(minHeight, Math.ceil(estimatedHeight + 90));
 }
 
 function drawTeamSection(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale) {

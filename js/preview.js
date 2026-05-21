@@ -1,4 +1,5 @@
-import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=20260522-toolbar';
+import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=20260522-f4';
+import { DEFAULT_PAPER_SIZE, VARIANT_STYLES, getPaperSize } from './config.js?v=20260522-f4';
 
 export function renderPreview(state, documentPreview) {
   if (!documentPreview) {
@@ -26,6 +27,12 @@ export function renderPreview(state, documentPreview) {
   documentPreview.style.setProperty('--font-scale', `${Number(state.fontScale) || 1}`);
   documentPreview.style.setProperty('--page-padding', `${Number(state.pagePadding) || 60}px`);
   documentPreview.style.setProperty('--doc-font-family', state.fontFamily || 'Arial, Helvetica, sans-serif');
+  const paper = getPaperSize(state.paperSize || DEFAULT_PAPER_SIZE);
+  documentPreview.style.setProperty('--doc-page-width', `${paper.cssWidth}px`);
+  documentPreview.style.setProperty('--doc-page-height', `${paper.cssHeight}px`);
+  documentPreview.dataset.paperSize = paper.id;
+  const style = VARIANT_STYLES.includes(state.variantStyle) ? state.variantStyle : 'classic';
+  documentPreview.dataset.variantStyle = style;
   documentPreview.dataset.type = state.type;
 
   const logoMarkup = state.logoSrc

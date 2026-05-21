@@ -1,6 +1,6 @@
-import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-toolbar';
-import { createExportEnvelope } from './schema.js?v=20260522-toolbar';
-import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=20260522-toolbar';
+import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-f4';
+import { createExportEnvelope } from './schema.js?v=20260522-f4';
+import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=20260522-f4';
 
 export async function handleExport(state, exportOptions = {}, setStatus = () => {}) {
   const format = exportOptions.format || 'pdf';
@@ -124,9 +124,9 @@ async function exportWordDocument(state, fileBaseName, scale, quality, openAfter
 <meta charset="utf-8">
 <title>${escapeHtml(state.title)} ${escapeHtml(state.number)}</title>
 <style>
-@page { size: A4; margin: 0; }
+@page { size: 210mm 330mm; margin: 0; }
 body { margin: 0; background: #ffffff; }
-.page { width: 210mm; min-height: 297mm; margin: 0 auto; }
+.page { width: 210mm; min-height: 330mm; margin: 0 auto; }
 img { display: block; width: 210mm; height: auto; }
 </style>
 </head>
