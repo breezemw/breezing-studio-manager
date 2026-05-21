@@ -1,7 +1,7 @@
-import { DEFAULT_LOGO_SRC, defaultBusiness, defaultLabels, defaultLayout, defaultSections, getTemplateVariant, sharedDocumentDefaults, templates } from './config.js?v=20260522-f4';
-import { createDocumentId, normalizeSchemaFields } from './schema.js?v=20260522-f4';
-import { createDefaultTeam, normalizeTeamMember } from './team.js?v=20260522-f4';
-import { cloneData } from './utils.js?v=20260522-f4';
+import { DEFAULT_LOGO_SRC, defaultBusiness, defaultLabels, defaultLayout, defaultSections, getTemplateVariant, sharedDocumentDefaults, templates } from './config.js?v=20260522-reference3';
+import { createDocumentId, normalizeSchemaFields } from './schema.js?v=20260522-reference3';
+import { createDefaultTeam, normalizeTeamMember } from './team.js?v=20260522-reference3';
+import { cloneData } from './utils.js?v=20260522-reference3';
 
 const store = {
   current: createState('invoice'),
@@ -23,6 +23,7 @@ export function createState(type, previousState = {}, variantId = '') {
   const previousBusiness = previousState.business || defaultBusiness;
   const previousLayout = previousState.layout || defaultLayout;
   const previousTeam = Array.isArray(previousState.team) ? previousState.team.map(normalizeTeamMember) : createDefaultTeam();
+  const previousSections = previousState.type === template.type ? previousState.sections || {} : {};
 
   return normalizeSchemaFields({
     ...sharedDocumentDefaults,
@@ -33,7 +34,7 @@ export function createState(type, previousState = {}, variantId = '') {
     business: { ...cloneData(defaultBusiness), ...cloneData(previousBusiness) },
     team: previousTeam,
     labels: { ...cloneData(defaultLabels), ...cloneData(template.labels || {}), ...cloneData(variantData.labels || {}) },
-    sections: { ...cloneData(defaultSections), ...cloneData(previousState.sections || {}) },
+    sections: { ...cloneData(defaultSections), ...cloneData(template.sections || {}), ...cloneData(variantData.sections || {}), ...cloneData(previousSections) },
     layout: { ...cloneData(defaultLayout), ...cloneData(previousLayout) },
     logoSrc: previousState.logoSrc || sharedDocumentDefaults.logoSrc,
     signatureSrc: previousState.signatureSrc || sharedDocumentDefaults.signatureSrc,

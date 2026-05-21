@@ -1,5 +1,5 @@
-import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=20260522-f4';
-import { DEFAULT_PAPER_SIZE, VARIANT_STYLES, getPaperSize } from './config.js?v=20260522-f4';
+import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=20260522-reference3';
+import { DEFAULT_PAPER_SIZE, VARIANT_STYLES, getPaperSize } from './config.js?v=20260522-reference3';
 
 export function renderPreview(state, documentPreview) {
   if (!documentPreview) {
@@ -185,6 +185,32 @@ function renderItemsTable(state, totals, labels, currency) {
 }
 
 function renderNotePaymentGrid(state, labels, sections) {
+  if (state.type === 'quotation') {
+    const paymentCard = sections.payment ? `
+      <article class="doc-payment">
+        <span class="doc-card-title">${escapeHtml(labels.payment)}</span>
+        <dl>
+          <div><dt>Bank</dt><dd>${escapeHtml(state.business.bank)}</dd></div>
+          <div><dt>Account</dt><dd>${escapeHtml(state.business.account)}</dd></div>
+          <div><dt>Airtel</dt><dd>${escapeHtml(state.business.airtel)}</dd></div>
+        </dl>
+      </article>
+    ` : '';
+    const preparedCard = sections.signature ? `
+      <article class="doc-payment doc-prepared-card">
+        <span class="doc-card-title">Prepared By</span>
+        <h3>${escapeHtml(state.business.name)}</h3>
+        <p>Authorized Representative</p>
+        <div class="signature-line">Signature</div>
+      </article>
+    ` : '';
+    const cards = [paymentCard, preparedCard].filter(Boolean);
+    if (!cards.length) {
+      return '';
+    }
+    return `<section class="${cards.length === 1 ? 'doc-note-grid single-card' : 'doc-note-grid'}">${cards.join('')}</section>`;
+  }
+
   const noteCard = sections.notes ? `
     <article class="doc-note">
       <span class="doc-card-title">${escapeHtml(labels.note)}</span>
@@ -213,6 +239,15 @@ function renderNotePaymentGrid(state, labels, sections) {
 }
 
 function renderSignature(state, signatureImageMarkup) {
+  if (state.type === 'quotation') {
+    return `
+      <section class="doc-quote-closing">
+        <p>${multilineHtml(state.note)}</p>
+        <strong>${multilineHtml(state.terms)}</strong>
+      </section>
+    `;
+  }
+
   return `
     <section class="doc-signature-grid">
       <p class="doc-footer-text">${multilineHtml(state.terms)}</p>

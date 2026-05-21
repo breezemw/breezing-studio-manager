@@ -1,6 +1,7 @@
-import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-f4';
-import { createExportEnvelope } from './schema.js?v=20260522-f4';
-import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=20260522-f4';
+import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-reference3';
+import { DEFAULT_PAPER_SIZE, getPaperSize } from './config.js?v=20260522-reference3';
+import { createExportEnvelope } from './schema.js?v=20260522-reference3';
+import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=20260522-reference3';
 
 export async function handleExport(state, exportOptions = {}, setStatus = () => {}) {
   const format = exportOptions.format || 'pdf';
@@ -117,6 +118,9 @@ async function exportWordDocument(state, fileBaseName, scale, quality, openAfter
     scale,
     includeBackground: exportOptions.includeBackground,
   });
+  const paper = getPaperSize(state.paperSize || DEFAULT_PAPER_SIZE);
+  const pageWidth = paper.printWidth || '210mm';
+  const pageHeight = paper.printHeight || '297mm';
   const imageDataUrl = canvas.toDataURL('image/jpeg', quality);
   const html = `<!doctype html>
 <html>
@@ -124,10 +128,10 @@ async function exportWordDocument(state, fileBaseName, scale, quality, openAfter
 <meta charset="utf-8">
 <title>${escapeHtml(state.title)} ${escapeHtml(state.number)}</title>
 <style>
-@page { size: 210mm 330mm; margin: 0; }
+@page { size: ${paper.printSize}; margin: 0; }
 body { margin: 0; background: #ffffff; }
-.page { width: 210mm; min-height: 330mm; margin: 0 auto; }
-img { display: block; width: 210mm; height: auto; }
+.page { width: ${pageWidth}; min-height: ${pageHeight}; margin: 0 auto; }
+img { display: block; width: ${pageWidth}; height: auto; }
 </style>
 </head>
 <body>

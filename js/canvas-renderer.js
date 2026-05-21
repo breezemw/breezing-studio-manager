@@ -1,5 +1,5 @@
-import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, DEFAULT_PAPER_SIZE, PREVIEW_DOCUMENT_WIDTH, getPaperSize } from './config.js?v=20260522-f4';
-import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js?v=20260522-f4';
+import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, DEFAULT_PAPER_SIZE, PREVIEW_DOCUMENT_WIDTH, getPaperSize } from './config.js?v=20260522-reference3';
+import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js?v=20260522-reference3';
 
 let activeCanvasFontFamily = 'Arial, Helvetica, sans-serif';
 
@@ -20,7 +20,7 @@ export async function renderDocumentCanvas(state, options = {}) {
   const paperColor = options.includeBackground === false ? 'rgba(255,255,255,0)' : (state.paperColor || '#ffffff');
   const lineColor = state.lineColor || '#d9d5c8';
   const currency = state.currency || 'MWK';
-  const fontScale = Number(state.fontScale) || 1;
+  const fontScale = (Number(state.fontScale) || 1) * 0.5;
   const locale = state.locale || 'en-MW';
   activeCanvasFontFamily = state.fontFamily || 'Arial, Helvetica, sans-serif';
 
@@ -29,6 +29,20 @@ export async function renderDocumentCanvas(state, options = {}) {
 
   if (state.showWatermark && state.watermarkSrc) {
     await drawWatermark(context, state, documentHeight);
+  }
+
+  if (state.type === 'quotation') {
+    await drawQuotationReferenceCanvas(context, state, documentHeight, {
+      margin,
+      contentWidth,
+      totals,
+      accentColor,
+      darkColor,
+      lineColor,
+      currency,
+      locale,
+    });
+    return canvas;
   }
 
   context.fillStyle = darkColor;
@@ -107,30 +121,208 @@ export async function renderDocumentCanvas(state, options = {}) {
 }
 
 function estimateCanvasHeight(state) {
-  const fontScale = Number(state.fontScale) || 1;
-  const itemRowsHeight = state.sections.items
-    ? state.items.reduce((sum, item) => {
-      const textLength = [item.title, item.category, item.name, item.description, item.notes].filter(Boolean).join(' ').length;
-      return sum + Math.max(66, Math.ceil(textLength / 68) * 23 * fontScale + 42);
-    }, 0)
-    : 0;
-  const footerRows = 1
-    + (state.discount ? 1 : 0)
-    + (state.extraCharge ? 1 : 0)
-    + (state.taxRate ? 1 : 0)
-    + ((state.type === 'receipt' || state.amountPaid) ? 2 : 0);
-  const tableHeight = state.sections.items ? 28 + 52 + itemRowsHeight + footerRows * 48 + 90 : 0;
-  const teamCount = state.sections.team && Array.isArray(state.team) ? state.team.filter((member) => member.name || member.role || member.assignment).length : 0;
-  const teamHeight = teamCount ? 38 + Math.ceil(teamCount / 2) * 152 + 20 : 0;
-  const infoHeight = state.sections.client || state.sections.business ? 284 : 0;
-  const introHeight = state.sections.intro && state.intro ? 118 : 0;
-  const noteHeight = state.sections.notes || state.sections.payment ? 226 : 0;
-  const signatureHeight = state.sections.signature ? 180 : 0;
-  const fixedChromeHeight = 438;
-  const estimatedHeight = fixedChromeHeight + infoHeight + teamHeight + introHeight + tableHeight + noteHeight + signatureHeight;
   const paper = getPaperSize(state.paperSize || DEFAULT_PAPER_SIZE);
-  const minHeight = paper.canvasHeight || BASE_DOCUMENT_HEIGHT;
-  return Math.max(minHeight, Math.ceil(estimatedHeight + 90));
+  return paper.canvasHeight || BASE_DOCUMENT_HEIGHT;
+}
+
+async function drawQuotationReferenceCanvas(context, state, documentHeight, options) {
+  const { margin, contentWidth, totals, accentColor, darkColor, lineColor, currency, locale } = options;
+  const scale = BASE_DOCUMENT_WIDTH / PREVIEW_DOCUMENT_WIDTH;
+  const fontRatio = Number(state.fontScale) || 1;
+  const px = (value) => value * scale;
+  const fontPx = (value) => value * scale * fontRatio;
+  const rightX = BASE_DOCUMENT_WIDTH - margin;
+
+  context.fillStyle = darkColor;
+  context.fillRect(0, 0, BASE_DOCUMENT_WIDTH, px(10));
+  context.fillStyle = accentColor;
+  context.fillRect(0, px(10), BASE_DOCUMENT_WIDTH, px(3));
+
+  const logoImage = await loadImage(state.logoSrc).catch(() => null);
+  if (logoImage) {
+    const logoWidth = Math.min(Number(state.logoWidth || 152) * scale, px(154));
+    const logoRatio = (logoImage.naturalHeight || logoImage.height) / (logoImage.naturalWidth || logoImage.width);
+    const maxLogoHeight = Math.min(Number(state.logoMaxHeight || 62) * scale, px(62));
+    const logoHeight = Math.min(logoWidth * logoRatio, maxLogoHeight);
+    const safeLogoWidth = logoHeight === logoWidth * logoRatio ? logoWidth : logoWidth * (logoHeight / (logoWidth * logoRatio));
+    context.drawImage(logoImage, margin, px(31), safeLogoWidth, logoHeight);
+  }
+  drawText(context, state.business.tagline, margin, px(83), { size: fontPx(5), weight: '700', color: accentColor });
+
+  drawText(context, state.title, rightX, px(30), { align: 'right', size: fontPx(17), weight: '700', color: darkColor });
+  drawText(context, `No. ${state.number}`, rightX, px(72), { align: 'right', size: fontPx(5), weight: '700', color: '#343434' });
+  drawText(context, `Date: ${formatDate(state.date)}`, rightX, px(84), { align: 'right', size: fontPx(5), weight: '700', color: '#343434' });
+  if (state.preparedBy) {
+    drawText(context, `Prepared By: ${state.preparedBy}`, rightX, px(96), { align: 'right', size: fontPx(5), weight: '700', color: '#343434' });
+  }
+  const statusWidth = px(215);
+  drawRoundRect(context, rightX - statusWidth, px(116), statusWidth, px(18), px(9), '#fff7e4', accentColor, 1.5);
+  drawText(context, state.status, rightX - statusWidth / 2, px(121), { align: 'center', size: fontPx(5), weight: '700', color: '#8c641f' });
+
+  context.fillStyle = lineColor;
+  context.fillRect(margin, px(114), contentWidth, 1.5);
+  context.fillStyle = accentColor;
+  context.fillRect(margin, px(114), px(105), px(3));
+
+  const cardGap = px(10);
+  const cardWidth = (contentWidth - cardGap) / 2;
+  const cardsY = px(129);
+  drawQuotationCard(context, margin, cardsY, cardWidth, px(90), state.labels.client, [
+    { text: state.clientName, size: 8, weight: '700', color: '#111111' },
+    { text: 'Event', size: 6, weight: '700', color: accentColor, yGap: 12 },
+    { text: state.eventName, size: 7, weight: '700', color: '#111111' },
+  ], accentColor, lineColor, scale, fontRatio);
+  drawText(context, 'Venue', margin + px(266), cardsY + px(58), { size: fontPx(6), weight: '700', color: accentColor });
+  drawText(context, state.venue, margin + px(266), cardsY + px(70), { size: fontPx(7), weight: '700', color: '#111111' });
+
+  drawQuotationCard(context, margin + cardWidth + cardGap, cardsY, cardWidth, px(90), state.labels.business, [
+    { text: state.business.name, size: 8, weight: '700', color: '#111111' },
+    { text: [state.business.phone, state.business.email].filter(Boolean).join(' | '), size: 6.5, color: '#343434' },
+    { text: state.business.website, size: 6.5, color: '#343434' },
+    { text: state.business.location, size: 6.5, color: '#343434' },
+    { text: state.business.maps, size: 6.5, weight: '700', color: '#343434' },
+  ], accentColor, lineColor, scale, fontRatio);
+
+  const introY = px(231);
+  drawRoundRect(context, margin, introY, contentWidth, px(34), px(6), '#eef3f8', '#cfd9e5', 1.5);
+  context.fillStyle = accentColor;
+  context.fillRect(margin, introY, px(4), px(34));
+  drawText(context, state.intro, margin + px(15), introY + px(12), { size: fontPx(8), color: '#343434' });
+
+  drawQuotationTable(context, state, margin, px(277), contentWidth, totals, accentColor, darkColor, lineColor, currency, locale, scale, fontRatio);
+  drawQuotationPaymentPrepared(context, state, margin, px(503), contentWidth, accentColor, lineColor, scale, fontRatio);
+  drawQuotationClosing(context, state, margin, px(621), contentWidth, accentColor, scale, fontRatio);
+  drawQuotationFooter(context, state, documentHeight, margin, contentWidth, accentColor, darkColor, lineColor, scale, fontRatio);
+}
+
+function drawQuotationCard(context, x, y, width, height, title, rows, accentColor, lineColor, scale, fontRatio) {
+  const px = (value) => value * scale;
+  const fontPx = (value) => value * scale * fontRatio;
+  drawRoundRect(context, x, y, width, height, px(6), '#ffffff', lineColor, 1.5);
+  context.fillStyle = accentColor;
+  context.fillRect(x, y, width, px(3));
+  drawText(context, title, x + px(12), y + px(15), { size: fontPx(6), weight: '700', color: accentColor });
+  let rowY = y + px(37);
+  rows.filter((row) => row.text).forEach((row) => {
+    if (row.yGap) {
+      rowY += px(row.yGap);
+    }
+    drawText(context, row.text, x + px(12), rowY, { size: fontPx(row.size || 7), weight: row.weight || '400', color: row.color || '#343434' });
+    rowY += px((row.size || 7) + 3);
+  });
+}
+
+function drawQuotationTable(context, state, x, y, width, totals, accentColor, darkColor, lineColor, currency, locale, scale, fontRatio) {
+  const px = (value) => value * scale;
+  const fontPx = (value) => value * scale * fontRatio;
+  const headerHeight = px(26);
+  const rowHeight = px(30);
+  const subtotalHeight = px(24);
+  const totalHeight = px(33);
+  const tableHeight = headerHeight + rowHeight * state.items.length + subtotalHeight + totalHeight;
+  const numberX = x + px(42);
+  const itemX = x + px(104);
+  const amountX = x + width - px(18);
+
+  drawRoundRect(context, x, y, width, tableHeight, px(7), '#ffffff', lineColor, 1.5);
+  context.fillStyle = darkColor;
+  context.fillRect(x, y, width, headerHeight);
+  drawText(context, 'NO.', numberX, y + px(9), { size: fontPx(6), weight: '700', color: '#ffffff', align: 'center' });
+  drawText(context, 'ITEM', itemX, y + px(9), { size: fontPx(6), weight: '700', color: '#ffffff' });
+  drawText(context, 'AMOUNT', amountX, y + px(9), { size: fontPx(6), weight: '700', color: '#ffffff', align: 'right' });
+
+  let rowY = y + headerHeight;
+  state.items.forEach((item, itemIndex) => {
+    context.fillStyle = itemIndex % 2 === 0 ? '#ffffff' : '#fbfcfd';
+    context.fillRect(x, rowY, width, rowHeight);
+    context.strokeStyle = lineColor;
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(x, rowY);
+    context.lineTo(x + width, rowY);
+    context.stroke();
+    drawText(context, String(itemIndex + 1), numberX, rowY + px(10), { size: fontPx(8), color: darkColor, align: 'center' });
+    drawText(context, item.title || item.name || item.description, itemX, rowY + px(10), { size: fontPx(8), weight: '700', color: darkColor });
+    drawText(context, formatMoney(getItemTotal(item), currency, locale), amountX, rowY + px(10), { size: fontPx(8), weight: '700', color: '#111111', align: 'right' });
+    rowY += rowHeight;
+  });
+
+  context.fillStyle = state.softColor || '#f6f7f9';
+  context.fillRect(x, rowY, width, subtotalHeight);
+  context.strokeStyle = lineColor;
+  context.beginPath();
+  context.moveTo(x, rowY);
+  context.lineTo(x + width, rowY);
+  context.stroke();
+  drawText(context, 'Subtotal', x + width - px(150), rowY + px(8), { size: fontPx(7), weight: '700', color: '#111111' });
+  drawText(context, formatMoney(totals.itemSubtotal, currency, locale), amountX, rowY + px(8), { size: fontPx(7), weight: '700', color: '#111111', align: 'right' });
+  rowY += subtotalHeight;
+
+  context.fillStyle = darkColor;
+  context.fillRect(x, rowY, width, totalHeight);
+  context.fillStyle = accentColor;
+  context.fillRect(x, rowY, px(4), totalHeight);
+  context.fillStyle = accentColor;
+  context.fillRect(x, rowY, width, px(3));
+  drawText(context, state.labels.total, x + width - px(260), rowY + px(9), { size: fontPx(11), weight: '700', color: '#ffffff' });
+  drawText(context, formatMoney(totals.total, currency, locale), amountX, rowY + px(9), { size: fontPx(11), weight: '700', color: '#f4c35a', align: 'right' });
+}
+
+function drawQuotationPaymentPrepared(context, state, x, y, width, accentColor, lineColor, scale, fontRatio) {
+  const px = (value) => value * scale;
+  const fontPx = (value) => value * scale * fontRatio;
+  const gap = px(10);
+  const cardWidth = (width - gap) / 2;
+  const height = px(98);
+  drawQuotationCard(context, x, y, cardWidth, height, state.labels.payment, [], accentColor, lineColor, scale, fontRatio);
+  const rows = [
+    ['Bank', state.business.bank],
+    ['Account', state.business.account],
+    ['Airtel', state.business.airtel],
+  ];
+  let rowY = y + px(38);
+  rows.forEach(([label, value]) => {
+    drawText(context, label, x + px(12), rowY, { size: fontPx(6), weight: '700', color: '#777777' });
+    drawText(context, value, x + px(78), rowY, { size: fontPx(7), weight: '700', color: '#111111' });
+    rowY += px(18);
+  });
+
+  const preparedX = x + cardWidth + gap;
+  drawQuotationCard(context, preparedX, y, cardWidth, height, 'Prepared By', [
+    { text: state.business.name, size: 8, weight: '700', color: '#111111' },
+    { text: 'Authorized Representative', size: 6, color: '#555555' },
+  ], accentColor, lineColor, scale, fontRatio);
+  context.strokeStyle = '#111111';
+  context.lineWidth = 1.5;
+  context.beginPath();
+  context.moveTo(preparedX + px(12), y + px(70));
+  context.lineTo(preparedX + cardWidth - px(12), y + px(70));
+  context.stroke();
+  drawText(context, 'Signature', preparedX + px(12), y + px(76), { size: fontPx(6), color: '#777777' });
+}
+
+function drawQuotationClosing(context, state, x, y, width, accentColor, scale, fontRatio) {
+  const px = (value) => value * scale;
+  const fontPx = (value) => value * scale * fontRatio;
+  drawRoundRect(context, x, y, width, px(38), px(6), '#fff7e4', '#e2cc9c', 1.5);
+  drawText(context, state.note, x + px(12), y + px(10), { size: fontPx(7), weight: '700', color: '#111111' });
+  drawText(context, state.terms, x + px(12), y + px(24), { size: fontPx(6), weight: '700', color: accentColor });
+}
+
+function drawQuotationFooter(context, state, documentHeight, margin, contentWidth, accentColor, darkColor, lineColor, scale, fontRatio) {
+  const px = (value) => value * scale;
+  const fontPx = (value) => value * scale * fontRatio;
+  const footerY = documentHeight - px(71);
+  context.fillStyle = lineColor;
+  context.fillRect(margin, footerY, contentWidth, 1.5);
+  context.fillStyle = accentColor;
+  context.fillRect(margin, footerY, px(105), px(3));
+  drawText(context, `${state.business.name}  |  ${state.business.phone}  |  ${state.business.maps}`, BASE_DOCUMENT_WIDTH / 2, footerY + px(16), { align: 'center', size: fontPx(5), weight: '700', color: '#343434' });
+  drawText(context, state.business.location, BASE_DOCUMENT_WIDTH / 2, footerY + px(29), { align: 'center', size: fontPx(5), color: '#666666' });
+  context.fillStyle = accentColor;
+  context.fillRect(0, documentHeight - px(15), BASE_DOCUMENT_WIDTH, px(2));
+  context.fillStyle = darkColor;
+  context.fillRect(0, documentHeight - px(13), BASE_DOCUMENT_WIDTH, px(13));
 }
 
 function drawTeamSection(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale) {

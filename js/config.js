@@ -1,21 +1,21 @@
 export const DEFAULT_LOGO_SRC = 'assets/breezing-logo-web.png';
-// Paper geometry. Defaults match F4 (Foolscap Folio, 210mm x 330mm).
-// Width is shared with A4 so swapping paper sizes only changes the page height.
+// Paper geometry. The live preview follows the original generated PNG preview:
+// A4 rendered at 620 x 877 px, with F4/Letter scaled from the same width.
 export const BASE_DOCUMENT_WIDTH = 1240;
-export const BASE_DOCUMENT_HEIGHT = 1949;
-export const PREVIEW_DOCUMENT_WIDTH = 794;
-export const PREVIEW_DOCUMENT_HEIGHT = 1248;
+export const BASE_DOCUMENT_HEIGHT = 1754;
+export const PREVIEW_DOCUMENT_WIDTH = 620;
+export const PREVIEW_DOCUMENT_HEIGHT = 877;
 export const STORAGE_KEY = 'breezing-studio-manager-layout';
 
 // Supported paper sizes. cssWidth/cssHeight drive the on-screen preview (96dpi),
 // canvasWidth/canvasHeight drive PNG/PDF rendering at ~150dpi, printSize feeds
 // the @page rule in the Word/print export.
 export const PAPER_SIZES = {
-  F4: { id: 'F4', name: 'F4 (210 × 330 mm)', cssWidth: 794, cssHeight: 1248, canvasWidth: 1240, canvasHeight: 1949, printSize: '210mm 330mm' },
-  A4: { id: 'A4', name: 'A4 (210 × 297 mm)', cssWidth: 794, cssHeight: 1123, canvasWidth: 1240, canvasHeight: 1754, printSize: 'A4' },
-  Letter: { id: 'Letter', name: 'Letter (8.5 × 11 in)', cssWidth: 816, cssHeight: 1056, canvasWidth: 1275, canvasHeight: 1650, printSize: 'letter' },
+  A4: { id: 'A4', name: 'A4 Reference (620 × 877 px)', cssWidth: 620, cssHeight: 877, canvasWidth: 1240, canvasHeight: 1754, printWidth: '210mm', printHeight: '297mm', printSize: 'A4' },
+  F4: { id: 'F4', name: 'F4 (210 × 330 mm)', cssWidth: 620, cssHeight: 974, canvasWidth: 1240, canvasHeight: 1949, printWidth: '210mm', printHeight: '330mm', printSize: '210mm 330mm' },
+  Letter: { id: 'Letter', name: 'Letter (8.5 × 11 in)', cssWidth: 638, cssHeight: 825, canvasWidth: 1275, canvasHeight: 1650, printWidth: '8.5in', printHeight: '11in', printSize: 'letter' },
 };
-export const DEFAULT_PAPER_SIZE = 'F4';
+export const DEFAULT_PAPER_SIZE = 'A4';
 export function getPaperSize(id) {
   return PAPER_SIZES[id] || PAPER_SIZES[DEFAULT_PAPER_SIZE];
 }
@@ -40,9 +40,9 @@ export const defaultBusiness = {
   website: 'Breezingpictures.com',
   location: 'Behind Petroda Filling Station, Mbayani, Blantyre',
   maps: 'https://g.page/breezing-pictures',
-  bank: 'Bank Name',
-  account: 'Account Number',
-  airtel: 'Airtel Money Number',
+  bank: 'National Bank',
+  account: '100-961-6531',
+  airtel: '099 374 1274',
 };
 
 export const defaultLabels = {
@@ -88,10 +88,10 @@ export const fontPresets = [
 ];
 
 export const logoPresets = [
-  { id: 'primary-logo', name: 'Primary Centered', src: DEFAULT_LOGO_SRC, width: 260, maxHeight: 112, align: 'center' },
-  { id: 'compact-header', name: 'Compact Header', src: DEFAULT_LOGO_SRC, width: 190, maxHeight: 82, align: 'left' },
-  { id: 'statement-mark', name: 'Statement Mark', src: DEFAULT_LOGO_SRC, width: 340, maxHeight: 132, align: 'center' },
-  { id: 'right-signed', name: 'Right Aligned', src: DEFAULT_LOGO_SRC, width: 230, maxHeight: 96, align: 'right' },
+  { id: 'primary-logo', name: 'Primary Centered', src: DEFAULT_LOGO_SRC, width: 152, maxHeight: 62, align: 'center' },
+  { id: 'compact-header', name: 'Compact Header', src: DEFAULT_LOGO_SRC, width: 124, maxHeight: 52, align: 'left' },
+  { id: 'statement-mark', name: 'Statement Mark', src: DEFAULT_LOGO_SRC, width: 184, maxHeight: 72, align: 'center' },
+  { id: 'right-signed', name: 'Right Aligned', src: DEFAULT_LOGO_SRC, width: 146, maxHeight: 58, align: 'right' },
 ];
 
 export const studioPresets = [
@@ -127,16 +127,16 @@ export const sharedDocumentDefaults = {
   textColor: '#111111',
   lineColor: '#d9d5c8',
   fontScale: 1,
-  pagePadding: 60,
+  pagePadding: 45,
   logoSrc: DEFAULT_LOGO_SRC,
-  logoWidth: 260,
-  logoMaxHeight: 112,
+  logoWidth: 152,
+  logoMaxHeight: 62,
   logoAlign: 'center',
   signatureSrc: '',
-  signatureWidth: 180,
+  signatureWidth: 130,
   showSignature: false,
   watermarkSrc: DEFAULT_LOGO_SRC,
-  watermarkWidth: 420,
+  watermarkWidth: 260,
   watermarkOpacity: 0.06,
   showWatermark: false,
 };
@@ -192,11 +192,19 @@ export const templates = {
     accentColor: '#b8872c',
     darkColor: '#0e2742',
     paperColor: '#ffffff',
+    lineColor: '#dadde2',
+    softColor: '#f6f7f9',
+    logoAlign: 'left',
+    logoWidth: 152,
+    logoMaxHeight: 62,
+    pagePadding: 45,
+    sectionOrder: ['cards', 'intro', 'items', 'notes', 'signature'],
+    sections: { ...defaultSections, team: false },
     labels: { ...defaultLabels, client: 'QUOTED TO', items: 'EQUIPMENT DESCRIPTION' },
     items: [
       { category: 'Camera', title: 'Sony A6400 Camera', name: 'Camera Body', description: 'Mirrorless camera body for 4K production.', quantity: 1, unit: 'day', unitPrice: 80000, discount: 0, notes: '' },
       { category: 'Stabilizer', title: 'Gimbal Stabilizer', name: 'Gimbal', description: 'Stabilizer for smooth camera movement.', quantity: 1, unit: 'day', unitPrice: 50000, discount: 0, notes: '' },
-      { category: 'Lenses', title: 'Two Camera Lenses', name: '16mm & 30mm', description: 'Two camera lenses for wide and normal coverage.', quantity: 1, unit: 'day', unitPrice: 100000, discount: 0, notes: '' },
+      { category: 'Lenses', title: 'Two Camera Lenses (16mm & 30mm)', name: '16mm & 30mm', description: 'Two camera lenses for wide and normal coverage.', quantity: 1, unit: 'day', unitPrice: 100000, discount: 0, notes: '' },
       { category: 'Storage', title: '4K Memory Card', name: 'Memory Card', description: 'High-speed storage for 4K recording.', quantity: 1, unit: 'day', unitPrice: 50000, discount: 0, notes: '' },
     ],
   },
@@ -295,7 +303,7 @@ export const templateVariants = {
     { id: 'invoice-final', name: 'Final Balance Invoice', data: { title: 'FINAL INVOICE', status: 'BALANCE DUE', variantStyle: 'bold', paidLabel: 'Deposit Received', labels: { ...defaultLabels, total: 'FINAL TOTAL' } } },
   ],
   quotation: [
-    { id: 'quotation-equipment', name: 'Equipment Hire Quotation', data: { title: 'EQUIPMENT HIRE QUOTATION', variantStyle: 'classic', labels: { ...defaultLabels, client: 'QUOTED TO', items: 'EQUIPMENT DESCRIPTION' } } },
+    { id: 'quotation-equipment', name: 'Equipment Hire Quotation', data: { title: 'EQUIPMENT HIRE QUOTATION', variantStyle: 'classic', logoAlign: 'left', logoWidth: 152, logoMaxHeight: 62, pagePadding: 45, sectionOrder: ['cards', 'intro', 'items', 'notes', 'signature'], sections: { team: false }, labels: { ...defaultLabels, client: 'QUOTED TO', items: 'EQUIPMENT DESCRIPTION' } } },
     { id: 'quotation-service', name: 'Service Proposal Quote', data: { title: 'SERVICE QUOTATION', subtitle: 'Studio service estimate', status: 'VALID FOR REVIEW', variantStyle: 'modern', labels: { ...defaultLabels, items: 'SERVICE PROPOSAL' } } },
     { id: 'quotation-event', name: 'Event Coverage Quote', data: { title: 'EVENT COVERAGE QUOTATION', status: 'VALID FOR EVENT DATE', variantStyle: 'minimal', accentColor: '#2e6b35', labels: { ...defaultLabels, items: 'COVERAGE PACKAGE' } } },
     { id: 'quotation-retainer', name: 'Retainer Estimate', data: { title: 'RETAINER ESTIMATE', status: 'SUBJECT TO APPROVAL', variantStyle: 'bold', labels: { ...defaultLabels, total: 'ESTIMATED TOTAL' } } },
