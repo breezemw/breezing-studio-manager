@@ -1,5 +1,5 @@
-import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH } from './config.js';
 import { renderDocumentCanvas } from './canvas-renderer.js';
+import { createExportEnvelope } from './schema.js';
 import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js';
 
 export async function handleExport(state, exportOptions = {}, setStatus = () => {}) {
@@ -68,14 +68,19 @@ export async function handleExport(state, exportOptions = {}, setStatus = () => 
 
   const jpegDataUrl = canvas.toDataURL('image/jpeg', quality);
   const jpegBytes = dataUrlToBytes(jpegDataUrl);
-  const pdfBytes = createPdfFromJpeg(jpegBytes, canvas.width, canvas.height);
+  const pdfBytes = createPdfFromJpeg(jpegBytes, canvas.width, canvas.height, {
+    title: `${state.title || 'Document'} ${state.number || ''}`.trim(),
+    author: state.business?.name || 'Breezing Pictures',
+    subject: `${state.type || 'studio'} export`,
+    keywords: 'invoice, quotation, inquiry, receipt, correction, Breezing Pictures',
+  });
   downloadBlob(new Blob([pdfBytes], { type: 'application/pdf' }), `${fileBaseName}.pdf`, openAfter);
   setStatus('PDF exported');
   await maybeExportBackup(state, fileBaseName, exportOptions.includeBackup);
 }
 
 export function exportJson(state, fileBaseName, openAfter = false) {
-  downloadBlob(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }), `${fileBaseName}.json`, openAfter);
+  downloadBlob(new Blob([JSON.stringify(createExportEnvelope(state), null, 2)], { type: 'application/json' }), `${fileBaseName}.json`, openAfter);
 }
 
 async function maybeExportBackup(state, fileBaseName, includeBackup) {
@@ -156,7 +161,7 @@ async function getExportPreviewHtml(state) {
   return previewClone.outerHTML;
 }
 
-function createPdfFromJpeg(jpegBytes, imageWidth, imageHeight) {
+function createPdfFromJpeg(jpegBytes, imageWidth, imageHeight, metadata = {}) {
   const encoder = new TextEncoder();
   const chunks = [];
   const offsets = [];
@@ -166,6 +171,7 @@ function createPdfFromJpeg(jpegBytes, imageWidth, imageHeight) {
   const renderedHeight = pageWidth * (imageHeight / imageWidth);
   const pageCount = Math.max(1, Math.ceil(renderedHeight / pageHeight));
   const imageObjectNumber = 2 * pageCount + 3;
+  const infoObjectNumber = imageObjectNumber + 1;
 
   function appendString(value) {
     const bytes = encoder.encode(value);
@@ -185,7 +191,7 @@ function createPdfFromJpeg(jpegBytes, imageWidth, imageHeight) {
 
   appendString('%PDF-1.3\n');
   startObject(1);
-  appendString('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  appendString(`<< /Type /Catalog /Pages 2 0 R >>\nendobj\n`);
   startObject(2);
   appendString(`<< /Type /Pages /Kids [${Array.from({ length: pageCount }, (_, index) => `${index + 3} 0 R`).join(' ')}] /Count ${pageCount} >>\nendobj\n`);
 
@@ -209,13 +215,16 @@ function createPdfFromJpeg(jpegBytes, imageWidth, imageHeight) {
   appendBytes(jpegBytes);
   appendString('\nendstream\nendobj\n');
 
+  startObject(infoObjectNumber);
+  appendString(`<< /Title (${pdfText(metadata.title || 'Studio document')}) /Author (${pdfText(metadata.author || 'Breezing Pictures')}) /Subject (${pdfText(metadata.subject || 'Studio document export')}) /Keywords (${pdfText(metadata.keywords || 'Breezing Pictures')}) /Producer (Breezing Pictures Studio Manager) /CreationDate (${pdfDate(new Date())}) >>\nendobj\n`);
+
   const xrefOffset = totalLength;
-  const objectCount = imageObjectNumber;
+  const objectCount = infoObjectNumber;
   appendString(`xref\n0 ${objectCount + 1}\n0000000000 65535 f \n`);
   for (let objectNumber = 1; objectNumber <= objectCount; objectNumber += 1) {
     appendString(`${String(offsets[objectNumber]).padStart(10, '0')} 00000 n \n`);
   }
-  appendString(`trailer\n<< /Size ${objectCount + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+  appendString(`trailer\n<< /Size ${objectCount + 1} /Root 1 0 R /Info ${infoObjectNumber} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
 
   const pdfBytes = new Uint8Array(totalLength);
   let offset = 0;
@@ -224,6 +233,15 @@ function createPdfFromJpeg(jpegBytes, imageWidth, imageHeight) {
     offset += chunk.length;
   });
   return pdfBytes;
+}
+
+function pdfText(value) {
+  return String(value || '').replace(/[\\()]/g, '\\$&').replace(/[\r\n]+/g, ' ');
+}
+
+function pdfDate(date) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `D:${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
 export const __testing = { createPdfFromJpeg };

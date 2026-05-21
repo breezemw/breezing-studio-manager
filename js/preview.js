@@ -25,6 +25,7 @@ export function renderPreview(state, documentPreview, previewName) {
   documentPreview.style.setProperty('--watermark-opacity', `${Number(state.watermarkOpacity) || 0.06}`);
   documentPreview.style.setProperty('--font-scale', `${Number(state.fontScale) || 1}`);
   documentPreview.style.setProperty('--page-padding', `${Number(state.pagePadding) || 60}px`);
+  documentPreview.style.setProperty('--doc-font-family', state.fontFamily || 'Arial, Helvetica, sans-serif');
   documentPreview.dataset.type = state.type;
 
   if (previewName) {
@@ -63,11 +64,23 @@ export function renderPreview(state, documentPreview, previewName) {
       <p>${escapeHtml(state.business.website)}</p>
       <p>${escapeHtml(state.business.location)}</p>
       ${state.business.maps ? `<p>${escapeHtml(state.business.maps)}</p>` : ''}
+      ${state.taxNumber ? `<p>${escapeHtml(state.taxLabel || 'Tax / VAT')}: ${escapeHtml(state.taxNumber)}</p>` : ''}
     </article>
   ` : '';
 
   const infoCards = [clientCard, businessCard].filter(Boolean).join('');
   const infoGridClass = [clientCard, businessCard].filter(Boolean).length === 1 ? 'doc-info-grid single-card' : 'doc-info-grid';
+  const sectionMarkup = {
+    cards: infoCards ? `<section class="${infoGridClass}">${infoCards}</section>` : '',
+    team: sections.team ? renderTeamSection(state) : '',
+    intro: sections.intro && state.intro ? `<section class="doc-intro"><p>${multilineHtml(state.intro)}</p></section>` : '',
+    items: sections.items ? renderItemsTable(state, totals, labels, currency) : '',
+    notes: renderNotePaymentGrid(state, labels, sections),
+    signature: sections.signature ? renderSignature(state, signatureImageMarkup) : '',
+  };
+  const orderedSections = (state.sectionOrder || ['intro', 'cards', 'team', 'items', 'notes', 'signature'])
+    .map((key) => sectionMarkup[key] || '')
+    .join('');
 
   documentPreview.innerHTML = `
     <div class="doc-bars" aria-hidden="true"></div>
@@ -93,12 +106,7 @@ export function renderPreview(state, documentPreview, previewName) {
       </div>
     </section>
 
-    ${infoCards ? `<section class="${infoGridClass}">${infoCards}</section>` : ''}
-    ${sections.team ? renderTeamSection(state) : ''}
-    ${sections.intro && state.intro ? `<section class="doc-intro"><p>${multilineHtml(state.intro)}</p></section>` : ''}
-    ${sections.items ? renderItemsTable(state, totals, labels, currency) : ''}
-    ${renderNotePaymentGrid(state, labels, sections)}
-    ${sections.signature ? renderSignature(state, signatureImageMarkup) : ''}
+    ${orderedSections}
     ${sections.footerBar ? '<div class="doc-footer-bar" aria-hidden="true"></div>' : ''}
   `;
 }
@@ -128,6 +136,7 @@ function renderTeamSection(state) {
 }
 
 function renderItemsTable(state, totals, labels, currency) {
+  const locale = state.locale || 'en-MW';
   return `
     <section class="doc-table-wrap">
       <div class="doc-table-label">${escapeHtml(labels.items)}</div>
@@ -152,20 +161,20 @@ function renderItemsTable(state, totals, labels, currency) {
                 ${item.notes ? `<span class="doc-item-notes">${escapeHtml(item.notes)}</span>` : ''}
               </td>
               <td>${Number(item.quantity) || 0} ${escapeHtml(item.unit || '')}</td>
-              <td>${formatMoney(Number(item.unitPrice) || 0, currency)}</td>
-              <td>${formatMoney(getItemTotal(item), currency)}</td>
+              <td>${formatMoney(Number(item.unitPrice) || 0, currency, locale)}</td>
+              <td>${formatMoney(getItemTotal(item), currency, locale)}</td>
             </tr>
           `).join('')}
         </tbody>
         <tfoot>
-          <tr><td colspan="4">Subtotal</td><td>${formatMoney(totals.itemSubtotal, currency)}</td></tr>
-          ${totals.itemDiscounts ? `<tr><td colspan="4">Item Discounts</td><td>${formatMoney(totals.itemDiscounts, currency)}</td></tr>` : ''}
-          ${totals.documentDiscount ? `<tr><td colspan="4">Document Discount</td><td>${formatMoney(totals.documentDiscount, currency)}</td></tr>` : ''}
-          ${totals.extraCharge ? `<tr><td colspan="4">${escapeHtml(state.extraChargeLabel || 'Extra Charge')}</td><td>${formatMoney(totals.extraCharge, currency)}</td></tr>` : ''}
-          ${totals.tax ? `<tr><td colspan="4">Tax</td><td>${formatMoney(totals.tax, currency)}</td></tr>` : ''}
-          <tr class="doc-grand-total"><td colspan="4">${escapeHtml(labels.total)}</td><td>${formatMoney(totals.total, currency)}</td></tr>
-          ${state.type === 'receipt' || totals.paid ? `<tr><td colspan="4">${escapeHtml(state.paidLabel || 'Amount Paid')}</td><td>${formatMoney(totals.paid, currency)}</td></tr>` : ''}
-          ${state.type === 'receipt' || totals.paid ? `<tr><td colspan="4">Balance</td><td>${formatMoney(totals.balance, currency)}</td></tr>` : ''}
+          <tr><td colspan="4">Subtotal</td><td>${formatMoney(totals.itemSubtotal, currency, locale)}</td></tr>
+          ${totals.itemDiscounts ? `<tr><td colspan="4">Item Discounts</td><td>${formatMoney(totals.itemDiscounts, currency, locale)}</td></tr>` : ''}
+          ${totals.documentDiscount ? `<tr><td colspan="4">Document Discount</td><td>${formatMoney(totals.documentDiscount, currency, locale)}</td></tr>` : ''}
+          ${totals.extraCharge ? `<tr><td colspan="4">${escapeHtml(state.extraChargeLabel || 'Extra Charge')}</td><td>${formatMoney(totals.extraCharge, currency, locale)}</td></tr>` : ''}
+          ${totals.tax ? `<tr><td colspan="4">${escapeHtml(state.taxLabel || 'Tax / VAT')}</td><td>${formatMoney(totals.tax, currency, locale)}</td></tr>` : ''}
+          <tr class="doc-grand-total"><td colspan="4">${escapeHtml(labels.total)}</td><td>${formatMoney(totals.total, currency, locale)}</td></tr>
+          ${state.type === 'receipt' || totals.paid ? `<tr><td colspan="4">${escapeHtml(state.paidLabel || 'Amount Paid')}</td><td>${formatMoney(totals.paid, currency, locale)}</td></tr>` : ''}
+          ${state.type === 'receipt' || totals.paid ? `<tr><td colspan="4">Balance</td><td>${formatMoney(totals.balance, currency, locale)}</td></tr>` : ''}
         </tfoot>
       </table>
     </section>
@@ -187,6 +196,7 @@ function renderNotePaymentGrid(state, labels, sections) {
         <div><dt>Method</dt><dd>${escapeHtml(state.paymentMethod)}</dd></div>
         <div><dt>Bank</dt><dd>${escapeHtml(state.business.bank)} ${escapeHtml(state.business.account)}</dd></div>
         <div><dt>Airtel</dt><dd>${escapeHtml(state.business.airtel)}</dd></div>
+        ${state.taxNumber ? `<div><dt>${escapeHtml(state.taxLabel || 'Tax / VAT')}</dt><dd>${escapeHtml(state.taxNumber)}</dd></div>` : ''}
       </dl>
     </article>
   ` : '';

@@ -27,6 +27,12 @@
       <div class="header-actions" aria-label="Document actions">
         <button class="button button-soft" type="button" data-action="toggle-panel" aria-expanded="true" aria-controls="controlPanel">Controls</button>
         <button class="button button-soft" type="button" data-action="reset-template">New</button>
+        <button class="button button-soft" type="button" data-action="generate-number">Generate No.</button>
+        <button class="button button-soft" type="button" data-action="undo">Undo</button>
+        <button class="button button-soft" type="button" data-action="redo">Redo</button>
+        <button class="button button-soft" type="button" data-action="save-version">Save Draft</button>
+        <button class="button button-soft" type="button" data-action="print">Print</button>
+        <button class="button button-soft" type="button" data-action="open-command-palette">Commands</button>
         <button class="button button-primary" type="button" data-action="open-export-modal">Export...</button>
       </div>
     </div>
@@ -65,7 +71,12 @@
           <button class="template-tab" type="button" role="tab" aria-selected="false" data-template="quotation">Quotation</button>
           <button class="template-tab" type="button" role="tab" aria-selected="false" data-template="inquiry">Inquiry</button>
           <button class="template-tab" type="button" role="tab" aria-selected="false" data-template="receipt">Receipt</button>
+          <button class="template-tab" type="button" role="tab" aria-selected="false" data-template="correction">Correction</button>
         </div>
+        <label>
+          <span>Template Style</span>
+          <select data-template-variant></select>
+        </label>
       </section>
 
       <section class="panel-section">
@@ -94,6 +105,25 @@
           <input type="checkbox" data-layout-field="compact">
           <span>Compact editor spacing</span>
         </label>
+        <label class="checkbox-label">
+          <input type="checkbox" data-layout-field="darkMode">
+          <span>Dark mode workspace</span>
+        </label>
+      </section>
+
+      <section class="panel-section">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Auto-save & Recovery</p>
+            <h2>IndexedDB drafts</h2>
+          </div>
+          <span class="internal-badge" data-autosave-status>Offline ready</span>
+        </div>
+        <div class="utility-row compact-actions">
+          <button class="button button-soft" type="button" data-action="restore-latest-draft">Restore Latest</button>
+          <button class="button button-soft" type="button" data-action="save-version">Save Version</button>
+        </div>
+        <div class="version-list" data-version-list></div>
       </section>
 
       <section class="panel-section">
@@ -130,6 +160,19 @@
           <label>
             <span>Currency</span>
             <input type="text" data-field="currency" maxlength="8">
+          </label>
+          <label>
+            <span>Locale</span>
+            <select data-field="locale">
+              <option value="en-MW">English Malawi</option>
+              <option value="en-US">English US</option>
+              <option value="en-GB">English UK</option>
+              <option value="en-ZA">English South Africa</option>
+            </select>
+          </label>
+          <label>
+            <span>Number Prefix</span>
+            <input type="text" data-field="numberPrefix" maxlength="12">
           </label>
           <label>
             <span>Prepared By</span>
@@ -199,6 +242,14 @@
           <label>
             <span>Tax %</span>
             <input type="number" min="0" step="0.01" inputmode="decimal" data-field="taxRate">
+          </label>
+          <label>
+            <span>Tax / VAT Label</span>
+            <input type="text" data-field="taxLabel">
+          </label>
+          <label>
+            <span>Tax / VAT Number</span>
+            <input type="text" data-field="taxNumber">
           </label>
           <label>
             <span>Paid</span>
@@ -285,6 +336,35 @@
           <label class="checkbox-label"><input type="checkbox" data-section-field="signature"><span>Signature</span></label>
           <label class="checkbox-label"><input type="checkbox" data-section-field="footerBar"><span>Footer Bar</span></label>
         </div>
+        <div class="section-order" data-section-order aria-label="Drag document sections to reorder"></div>
+      </section>
+
+      <section class="panel-section">
+        <p class="eyebrow">Branding Presets</p>
+        <div class="field-grid two-cols">
+          <label>
+            <span>Brand Theme</span>
+            <select data-brand-theme></select>
+          </label>
+          <label>
+            <span>Logo Preset</span>
+            <select data-logo-preset></select>
+          </label>
+          <label>
+            <span>Typography</span>
+            <select data-font-preset></select>
+          </label>
+          <label>
+            <span>Studio Preset</span>
+            <select data-studio-preset></select>
+          </label>
+        </div>
+        <button class="button button-soft full-width" type="button" data-action="duplicate-template">Duplicate Current Template</button>
+      </section>
+
+      <section class="panel-section">
+        <p class="eyebrow">Analytics Dashboard</p>
+        <div class="analytics-grid" data-analytics-dashboard></div>
       </section>
 
       <section class="panel-section">
@@ -437,11 +517,6 @@
           <p class="eyebrow">Live Preview</p>
           <h2 data-preview-name>Invoice BP-2026-001</h2>
         </div>
-        <div class="preview-actions" aria-label="Preview actions">
-          <button class="button button-soft" type="button" data-action="toggle-panel">Customize</button>
-          <button class="button button-soft" type="button" data-action="print">Print</button>
-          <button class="button button-primary" type="button" data-action="open-export-modal">Export...</button>
-        </div>
       </div>
 
       <div class="utility-row">
@@ -521,6 +596,25 @@
         <button class="button button-soft" type="button" data-action="close-export-modal">Cancel</button>
         <button class="button button-primary" type="button" data-action="run-export">Export Selected</button>
       </footer>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" data-command-palette hidden>
+    <section class="command-modal" role="dialog" aria-modal="true" aria-labelledby="commandTitle">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Command Palette</p>
+          <h2 id="commandTitle">Run a studio action</h2>
+        </div>
+        <button class="icon-button neutral" type="button" data-action="close-command-palette" aria-label="Close command palette">x</button>
+      </header>
+      <div class="command-body">
+        <label>
+          <span>Search Commands</span>
+          <input type="search" data-command-search placeholder="Type export, invoice, undo, recover...">
+        </label>
+        <div class="command-list" data-command-list></div>
+      </div>
     </section>
   </div>
 

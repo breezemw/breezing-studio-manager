@@ -1,6 +1,8 @@
 import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, PREVIEW_DOCUMENT_WIDTH } from './config.js';
 import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js';
 
+let activeCanvasFontFamily = 'Arial, Helvetica, sans-serif';
+
 export async function renderDocumentCanvas(state, options = {}) {
   const exportScale = Number(options.scale) || 2;
   const documentHeight = estimateCanvasHeight(state);
@@ -19,6 +21,8 @@ export async function renderDocumentCanvas(state, options = {}) {
   const lineColor = state.lineColor || '#d9d5c8';
   const currency = state.currency || 'MWK';
   const fontScale = Number(state.fontScale) || 1;
+  const locale = state.locale || 'en-MW';
+  activeCanvasFontFamily = state.fontFamily || 'Arial, Helvetica, sans-serif';
 
   context.fillStyle = paperColor;
   context.fillRect(0, 0, BASE_DOCUMENT_WIDTH, documentHeight);
@@ -63,30 +67,33 @@ export async function renderDocumentCanvas(state, options = {}) {
   drawText(context, state.status, statusX + statusWidth / 2, statusY + 13, { align: 'center', size: 18 * fontScale, weight: '700', color: isPaidStatus(state) ? '#2e6b35' : '#8c641f' });
 
   currentY += 182;
-  currentY = drawInfoCards(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale);
-
-  if (state.sections.team) {
-    currentY = drawTeamSection(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale);
-  }
-
-  if (state.sections.intro && state.intro) {
-    drawRoundRect(context, margin, currentY, contentWidth, 90, 12, '#eef3f8', '#cfd9e5', 2);
-    context.fillStyle = accentColor;
-    context.fillRect(margin, currentY, 8, 90);
-    drawWrappedText(context, state.intro, margin + 28, currentY + 22, contentWidth - 56, 25 * fontScale, { size: 20 * fontScale, color: '#343434' });
-    currentY += 118;
-  }
-
-  if (state.sections.items) {
-    currentY = drawCanvasTable(context, state, margin, currentY, contentWidth, totals, accentColor, darkColor, lineColor, currency, fontScale);
-    currentY += 28;
-  }
-
-  currentY = drawNotePayment(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale);
-  currentY += 36;
-
-  if (state.sections.signature) {
-    await drawSignature(context, state, margin, currentY, contentWidth, darkColor, fontScale);
+  const orderedSections = state.sectionOrder || ['intro', 'cards', 'team', 'items', 'notes', 'signature'];
+  for (const sectionKey of orderedSections) {
+    if (sectionKey === 'cards') {
+      currentY = drawInfoCards(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale);
+    }
+    if (sectionKey === 'team' && state.sections.team) {
+      currentY = drawTeamSection(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale);
+    }
+    if (sectionKey === 'intro' && state.sections.intro && state.intro) {
+      drawRoundRect(context, margin, currentY, contentWidth, 90, 12, '#eef3f8', '#cfd9e5', 2);
+      context.fillStyle = accentColor;
+      context.fillRect(margin, currentY, 8, 90);
+      drawWrappedText(context, state.intro, margin + 28, currentY + 22, contentWidth - 56, 25 * fontScale, { size: 20 * fontScale, color: '#343434' });
+      currentY += 118;
+    }
+    if (sectionKey === 'items' && state.sections.items) {
+      currentY = drawCanvasTable(context, state, margin, currentY, contentWidth, totals, accentColor, darkColor, lineColor, currency, locale, fontScale);
+      currentY += 28;
+    }
+    if (sectionKey === 'notes') {
+      currentY = drawNotePayment(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale);
+      currentY += 36;
+    }
+    if (sectionKey === 'signature' && state.sections.signature) {
+      await drawSignature(context, state, margin, currentY, contentWidth, darkColor, fontScale);
+      currentY += 170;
+    }
   }
 
   if (state.sections.footerBar) {
@@ -242,7 +249,7 @@ function drawInfoCards(context, state, margin, currentY, contentWidth, accentCol
   return currentY + cardHeight + 34;
 }
 
-function drawCanvasTable(context, state, x, y, width, totals, accentColor, darkColor, lineColor, currency, fontScale) {
+function drawCanvasTable(context, state, x, y, width, totals, accentColor, darkColor, lineColor, currency, locale, fontScale) {
   drawText(context, state.labels.items, x, y, { size: 17 * fontScale, weight: '700', color: accentColor });
   y += 28;
 
@@ -282,8 +289,8 @@ function drawCanvasTable(context, state, x, y, width, totals, accentColor, darkC
     drawText(context, String(itemIndex + 1), columns.number, rowY + 20, { size: 19 * fontScale, weight: '700', color: darkColor, align: 'center' });
     drawWrappedText(context, description, columns.description, rowY + 16, width - 520, 23 * fontScale, { size: 18 * fontScale, color: '#343434' });
     drawText(context, `${Number(item.quantity) || 0} ${item.unit || ''}`, columns.quantity, rowY + 20, { size: 18 * fontScale, weight: '700', color: '#343434', align: 'right' });
-    drawText(context, formatMoney(Number(item.unitPrice) || 0, currency), columns.rate, rowY + 20, { size: 18 * fontScale, weight: '700', color: '#343434', align: 'right' });
-    drawText(context, formatMoney(getItemTotal(item), currency), columns.amount, rowY + 20, { size: 18 * fontScale, weight: '700', color: darkColor, align: 'right' });
+    drawText(context, formatMoney(Number(item.unitPrice) || 0, currency, locale), columns.rate, rowY + 20, { size: 18 * fontScale, weight: '700', color: '#343434', align: 'right' });
+    drawText(context, formatMoney(getItemTotal(item), currency, locale), columns.amount, rowY + 20, { size: 18 * fontScale, weight: '700', color: darkColor, align: 'right' });
     rowY += rowHeight;
   });
 
@@ -292,7 +299,7 @@ function drawCanvasTable(context, state, x, y, width, totals, accentColor, darkC
     ...(totals.itemDiscounts ? [['Item Discounts', totals.itemDiscounts]] : []),
     ...(totals.documentDiscount ? [['Document Discount', totals.documentDiscount]] : []),
     ...(totals.extraCharge ? [[state.extraChargeLabel || 'Extra Charge', totals.extraCharge]] : []),
-    ...(totals.tax ? [['Tax', totals.tax]] : []),
+    ...(totals.tax ? [[state.taxLabel || 'Tax / VAT', totals.tax]] : []),
   ];
 
   footerRows.forEach(([label, amount]) => {
@@ -304,7 +311,7 @@ function drawCanvasTable(context, state, x, y, width, totals, accentColor, darkC
     context.lineTo(x + width, rowY);
     context.stroke();
     drawText(context, label, columns.rate - 190, rowY + 14, { size: 19 * fontScale, weight: '700', color: '#343434' });
-    drawText(context, formatMoney(amount, currency), columns.amount, rowY + 14, { size: 19 * fontScale, weight: '700', color: darkColor, align: 'right' });
+    drawText(context, formatMoney(amount, currency, locale), columns.amount, rowY + 14, { size: 19 * fontScale, weight: '700', color: darkColor, align: 'right' });
     rowY += 48;
   });
 
@@ -313,7 +320,7 @@ function drawCanvasTable(context, state, x, y, width, totals, accentColor, darkC
   context.fillStyle = accentColor;
   context.fillRect(x, rowY, 8, 66);
   drawText(context, state.labels.total, columns.description, rowY + 19, { size: 25 * fontScale, weight: '700', color: '#ffffff' });
-  drawText(context, formatMoney(totals.total, currency), columns.amount, rowY + 19, { size: 25 * fontScale, weight: '700', color: '#f4c35a', align: 'right' });
+  drawText(context, formatMoney(totals.total, currency, locale), columns.amount, rowY + 19, { size: 25 * fontScale, weight: '700', color: '#f4c35a', align: 'right' });
   rowY += 66;
 
   if (state.type === 'receipt' || totals.paid) {
@@ -326,7 +333,7 @@ function drawCanvasTable(context, state, x, y, width, totals, accentColor, darkC
       context.lineTo(x + width, rowY);
       context.stroke();
       drawText(context, label, columns.rate - 190, rowY + 14, { size: 19 * fontScale, weight: '700', color: '#343434' });
-      drawText(context, formatMoney(amount, currency), columns.amount, rowY + 14, { size: 19 * fontScale, weight: '700', color: darkColor, align: 'right' });
+      drawText(context, formatMoney(amount, currency, locale), columns.amount, rowY + 14, { size: 19 * fontScale, weight: '700', color: darkColor, align: 'right' });
       rowY += 48;
     });
   }
@@ -425,7 +432,7 @@ function drawRoundRect(context, x, y, width, height, radius, fillStyle, strokeSt
 }
 
 function setCanvasFont(context, size, weight = '400') {
-  context.font = `${weight} ${size}px Arial, Helvetica, sans-serif`;
+  context.font = `${weight} ${size}px ${activeCanvasFontFamily}`;
 }
 
 function measure(context, text, size, weight = '400') {

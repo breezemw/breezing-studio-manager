@@ -32,9 +32,9 @@ export function formatDate(dateValue) {
   });
 }
 
-export function formatMoney(amount, currency = 'MWK') {
+export function formatMoney(amount, currency = 'MWK', locale = 'en-MW') {
   const numericAmount = Number(amount) || 0;
-  const formattedAmount = numericAmount.toLocaleString('en-US', {
+  const formattedAmount = numericAmount.toLocaleString(locale || 'en-MW', {
     minimumFractionDigits: Number.isInteger(numericAmount) ? 0 : 2,
     maximumFractionDigits: 2,
   });

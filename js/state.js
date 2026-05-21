@@ -1,4 +1,5 @@
-import { DEFAULT_LOGO_SRC, defaultBusiness, defaultLabels, defaultLayout, defaultSections, sharedDocumentDefaults, templates } from './config.js';
+import { DEFAULT_LOGO_SRC, defaultBusiness, defaultLabels, defaultLayout, defaultSections, getTemplateVariant, sharedDocumentDefaults, templates } from './config.js';
+import { createDocumentId, normalizeSchemaFields } from './schema.js';
 import { createDefaultTeam, normalizeTeamMember } from './team.js';
 import { cloneData } from './utils.js';
 
@@ -15,33 +16,52 @@ export function setState(nextState) {
   return store.current;
 }
 
-export function createState(type, previousState = {}) {
+export function createState(type, previousState = {}, variantId = '') {
   const template = cloneData(templates[type] || templates.invoice);
+  const variant = cloneData(getTemplateVariant(template.type, variantId || previousState.variantId));
+  const variantData = cloneData(variant.data || {});
   const previousBusiness = previousState.business || defaultBusiness;
   const previousLayout = previousState.layout || defaultLayout;
   const previousTeam = Array.isArray(previousState.team) ? previousState.team.map(normalizeTeamMember) : createDefaultTeam();
 
-  return {
+  return normalizeSchemaFields({
     ...sharedDocumentDefaults,
     ...template,
+    ...variantData,
+    type: template.type,
+    variantId: variant.id,
     business: { ...cloneData(defaultBusiness), ...cloneData(previousBusiness) },
     team: previousTeam,
-    labels: { ...cloneData(defaultLabels), ...cloneData(template.labels || {}) },
+    labels: { ...cloneData(defaultLabels), ...cloneData(template.labels || {}), ...cloneData(variantData.labels || {}) },
     sections: { ...cloneData(defaultSections), ...cloneData(previousState.sections || {}) },
     layout: { ...cloneData(defaultLayout), ...cloneData(previousLayout) },
     logoSrc: previousState.logoSrc || sharedDocumentDefaults.logoSrc,
     signatureSrc: previousState.signatureSrc || sharedDocumentDefaults.signatureSrc,
     watermarkSrc: previousState.watermarkSrc || sharedDocumentDefaults.watermarkSrc,
-  };
+  });
 }
 
-export function applyTemplate(type) {
-  store.current = createState(type, store.current);
+export function applyTemplate(type, variantId = '') {
+  store.current = createState(type, store.current, variantId);
+  return store.current;
+}
+
+export function applyTemplateVariant(variantId) {
+  store.current = createState(store.current.type || 'invoice', store.current, variantId);
   return store.current;
 }
 
 export function resetCurrentTemplate() {
   return applyTemplate(store.current.type || 'invoice');
+}
+
+export function duplicateCurrentDocument() {
+  const duplicate = cloneData(store.current);
+  duplicate.documentId = createDocumentId();
+  duplicate.number = `${duplicate.number || 'DRAFT'}-COPY`;
+  duplicate.reference = duplicate.reference || `Copied from ${store.current.number || 'previous document'}`;
+  store.current = normalizeImportedState(duplicate);
+  return store.current;
 }
 
 export function normalizeImportedState(importedState = {}) {
@@ -61,7 +81,7 @@ export function normalizeImportedState(importedState = {}) {
     watermarkSrc: importedState.watermarkSrc || DEFAULT_LOGO_SRC,
   };
 
-  return normalizeNumberFields(nextState);
+  return normalizeSchemaFields(normalizeNumberFields(nextState));
 }
 
 export function normalizeItem(item = {}) {
@@ -114,5 +134,6 @@ function normalizeNumberFields(state) {
   state.items = state.items.map(normalizeItem);
   state.showSignature = Boolean(state.showSignature);
   state.showWatermark = Boolean(state.showWatermark);
+  state.sectionOrder = Array.isArray(state.sectionOrder) && state.sectionOrder.length ? state.sectionOrder : sharedDocumentDefaults.sectionOrder;
   return state;
 }
