@@ -1,7 +1,7 @@
-import { DEFAULT_LOGO_SRC, defaultBusiness, defaultLabels, defaultLayout, defaultSections, getTemplateVariant, sharedDocumentDefaults, templates } from './config.js?v=20260522-reference3';
-import { createDocumentId, normalizeSchemaFields } from './schema.js?v=20260522-reference3';
-import { createDefaultTeam, normalizeTeamMember } from './team.js?v=20260522-reference3';
-import { cloneData } from './utils.js?v=20260522-reference3';
+import { DEFAULT_LOGO_SRC, defaultBusiness, defaultLabels, defaultLayout, defaultSections, getTemplateVariant, sharedDocumentDefaults, templates } from './config.js?v=20260522-autosave-settings';
+import { createDocumentId, normalizeSchemaFields } from './schema.js?v=20260522-autosave-settings';
+import { createDefaultTeam, normalizeTeamMember } from './team.js?v=20260522-autosave-settings';
+import { cloneData } from './utils.js?v=20260522-autosave-settings';
 
 const store = {
   current: createState('invoice'),

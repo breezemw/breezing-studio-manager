@@ -1,5 +1,5 @@
-import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=20260522-reference3';
-import { DEFAULT_PAPER_SIZE, VARIANT_STYLES, getPaperSize } from './config.js?v=20260522-reference3';
+import { calculateTotals, escapeHtml, formatDate, formatMoney, getItemSubtotal, getItemTotal, isPaidStatus, multilineHtml } from './utils.js?v=20260522-autosave-settings';
+import { DEFAULT_PAPER_SIZE, VARIANT_STYLES, getPaperSize } from './config.js?v=20260522-autosave-settings';
 
 export function renderPreview(state, documentPreview) {
   if (!documentPreview) {

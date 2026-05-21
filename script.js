@@ -1,1 +1,1 @@
-import './js/app.js?v=20260522-reference3';
+import './js/app.js?v=20260522-autosave-settings';

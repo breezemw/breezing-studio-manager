@@ -62,12 +62,15 @@ body.dark-mode .app-header,
 body.dark-mode .panel-sticky-head,
 body.dark-mode .export-modal,
 body.dark-mode .command-modal,
+body.dark-mode .autosave-modal,
+body.dark-mode .settings-modal,
 body.dark-mode .panel-section,
 body.dark-mode input,
 body.dark-mode select,
 body.dark-mode textarea,
 body.dark-mode .button-soft,
 body.dark-mode .version-item,
+body.dark-mode .settings-card,
 body.dark-mode .analytics-card,
 body.dark-mode .section-order-item,
 body.dark-mode .item-row,
@@ -1450,7 +1453,8 @@ body[data-preview-zoom="115"] .document-page {
   display: none;
 }
 
-.export-modal {
+.export-modal,
+.settings-modal {
   width: min(920px, 100%);
   max-height: min(760px, calc(100vh - 44px));
   overflow: auto;
@@ -1460,7 +1464,8 @@ body[data-preview-zoom="115"] .document-page {
   animation: modal-enter 180ms ease-out;
 }
 
-.command-modal {
+.command-modal,
+.autosave-modal {
   width: min(620px, 100%);
   max-height: min(700px, calc(100vh - 44px));
   overflow: auto;
@@ -1472,6 +1477,66 @@ body[data-preview-zoom="115"] .document-page {
 
 .command-body {
   padding: 18px;
+}
+
+.autosave-body {
+  padding: 18px;
+}
+
+.autosave-toolbar {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+}
+
+.autosave-toolbar .utility-row {
+  margin-top: 0;
+}
+
+.autosave-meta,
+.settings-hint {
+  margin: 10px 0 0;
+  color: var(--mid);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 18px;
+}
+
+.settings-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dde0e5;
+  border-radius: var(--radius);
+  background: #fbfcfd;
+}
+
+.settings-card h3 {
+  margin: 0;
+  color: var(--black);
+  font-size: 1rem;
+}
+
+.settings-card label {
+  margin-top: 0;
+}
+
+.settings-summary-card {
+  grid-column: 1 / -1;
+  min-height: 86px;
+}
+
+.settings-summary-card p {
+  margin: 0;
+  color: var(--dark);
+  font-weight: 800;
 }
 
 @keyframes modal-enter {
@@ -1689,6 +1754,7 @@ body[data-preview-zoom="115"] .document-page {
   .doc-info-grid,
   .doc-note-grid,
   .doc-signature-grid,
+  .settings-layout,
   .export-layout,
   .format-grid {
     grid-template-columns: 1fr;

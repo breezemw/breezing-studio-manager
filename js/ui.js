@@ -1,12 +1,13 @@
-import { DEFAULT_LOGO_SRC, STORAGE_KEY, brandThemes, fontPresets, getTemplateVariant, logoPresets, studioPresets, templateVariants } from './config.js?v=20260522-reference3';
-import { applyTemplate, applyTemplateVariant, createBlankItem, duplicateCurrentDocument, getState, resetCurrentTemplate, setState } from './state.js?v=20260522-reference3';
-import { handleExport } from './exporter.js?v=20260522-reference3';
-import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-reference3';
-import { renderPreview } from './preview.js?v=20260522-reference3';
-import { createExportEnvelope, unwrapExportPayload, validateDocument } from './schema.js?v=20260522-reference3';
-import { getNextDocumentNumber, isIndexedDbAvailable, listVersions, loadDraft, loadVersion, saveDraft, saveVersion } from './storage.js?v=20260522-reference3';
-import { createBlankTeamMember, renderTeamEditorHtml } from './team.js?v=20260522-reference3';
-import { calculateTotals, cloneData, escapeHtml, fileToDataUrl, formatMoney, getFileBaseName, getItemTotal } from './utils.js?v=20260522-reference3';
+import { DEFAULT_LOGO_SRC, STORAGE_KEY, brandThemes, fontPresets, getTemplateVariant, logoPresets, studioPresets, templateVariants } from './config.js?v=20260522-autosave-settings';
+import { applyTemplate, applyTemplateVariant, createBlankItem, duplicateCurrentDocument, getState, resetCurrentTemplate, setState } from './state.js?v=20260522-autosave-settings';
+import { handleExport } from './exporter.js?v=20260522-autosave-settings';
+import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-autosave-settings';
+import { renderPreview } from './preview.js?v=20260522-autosave-settings';
+import { createExportEnvelope, unwrapExportPayload, validateDocument } from './schema.js?v=20260522-autosave-settings';
+import { getAutosaveIntervalMs, getSettingsSummary, loadSettings, normalizeSettings, resetSettings as resetStoredSettings, saveSettings } from './settings.js?v=20260522-autosave-settings';
+import { getNextDocumentNumber, isIndexedDbAvailable, listVersions, loadDraft, loadVersion, saveDraft, saveVersion } from './storage.js?v=20260522-autosave-settings';
+import { createBlankTeamMember, renderTeamEditorHtml } from './team.js?v=20260522-autosave-settings';
+import { calculateTotals, cloneData, escapeHtml, fileToDataUrl, formatMoney, getFileBaseName, getItemTotal } from './utils.js?v=20260522-autosave-settings';
 
 const numericFields = new Set([
   'discount',
@@ -35,6 +36,8 @@ const commandItems = [
   { action: 'generate-number', label: 'Generate next document number', hint: 'Numbering' },
   { action: 'save-version', label: 'Save recoverable version', hint: 'Recovery' },
   { action: 'restore-latest-draft', label: 'Restore latest autosaved draft', hint: 'Recovery' },
+  { action: 'open-autosave-modal', label: 'Open autosaved sessions', hint: 'Recovery' },
+  { action: 'open-settings-modal', label: 'Open settings', hint: 'Preferences' },
   { action: 'undo', label: 'Undo last edit', hint: 'History' },
   { action: 'redo', label: 'Redo edit', hint: 'History' },
   { action: 'toggle-dark-mode', label: 'Toggle dark mode', hint: 'Appearance' },
@@ -44,23 +47,28 @@ const commandItems = [
 ];
 
 let elements = {};
+let appSettings = loadSettings();
 let statusTimeoutId = 0;
 let renderFrameId = 0;
 let lastFocusedElement = null;
 let autosaveTimeoutId = 0;
 let readyForAutosave = false;
-let lastVersionAt = 0;
+let autosaveDirty = false;
+let pendingAutosaveReason = 'Auto-save';
+let lastSavedSignature = '';
 let cachedVersions = [];
 let undoStack = [];
 let redoStack = [];
 let historyLocked = false;
 
 export async function initUi() {
+  appSettings = loadSettings();
   elements = collectElements();
   populatePresetControls();
   await recoverDraft();
   loadSavedLayout();
   syncControls();
+  syncSettingsControls();
   renderItemsEditor();
   renderTeamEditor();
   renderSectionOrder();
@@ -69,8 +77,9 @@ export async function initUi() {
   bindEvents();
   exposeTestingApi();
   readyForAutosave = true;
+  lastSavedSignature = createAutosaveSignature();
   await refreshVersionList();
-  scheduleAutosave('Initial recovery checkpoint');
+  setAutosaveStatus(getAutosaveReadyMessage());
 }
 
 function collectElements() {
@@ -81,11 +90,16 @@ function collectElements() {
     statusMessage: document.querySelector('[data-status-message]'),
     importJsonInput: document.querySelector('[data-import-json]'),
     exportModal: document.querySelector('[data-export-modal]'),
+    autosaveModal: document.querySelector('[data-autosave-modal]'),
+    settingsModal: document.querySelector('[data-settings-modal]'),
     commandPalette: document.querySelector('[data-command-palette]'),
     commandSearch: document.querySelector('[data-command-search]'),
     commandList: document.querySelector('[data-command-list]'),
     exportFileName: document.querySelector('[data-export-option="fileName"]'),
-    autosaveStatus: document.querySelector('[data-autosave-status]'),
+    autosaveStatusElements: Array.from(document.querySelectorAll('[data-autosave-status]')),
+    autosaveMeta: document.querySelector('[data-autosave-meta]'),
+    settingsSummary: document.querySelector('[data-settings-summary]'),
+    settingsControls: Array.from(document.querySelectorAll('[data-setting-field]')),
     versionList: document.querySelector('[data-version-list]'),
     analyticsDashboard: document.querySelector('[data-analytics-dashboard]'),
     templateVariant: document.querySelector('[data-template-variant]'),
@@ -127,6 +141,11 @@ function bindEvents() {
 
   elements.layoutControls.forEach((control) => {
     control.addEventListener('change', () => updateLayoutField(control));
+  });
+
+  elements.settingsControls.forEach((control) => {
+    control.addEventListener('change', () => updateSettingField(control));
+    control.addEventListener('input', () => updateSettingField(control));
   });
 
   elements.templateVariant?.addEventListener('change', () => {
@@ -249,10 +268,12 @@ function bindEvents() {
     }
     if (event.key === 'Escape') {
       closeExportModal();
+      closeAutosaveModal();
+      closeSettingsModal();
       closeCommandPalette();
     }
     if (event.key === 'Tab') {
-      trapExportModalFocus(event);
+      trapActiveModalFocus(event);
     }
   });
 
@@ -260,6 +281,22 @@ function bindEvents() {
     elements.exportModal.addEventListener('click', (event) => {
       if (event.target === elements.exportModal) {
         closeExportModal();
+      }
+    });
+  }
+
+  if (elements.autosaveModal) {
+    elements.autosaveModal.addEventListener('click', (event) => {
+      if (event.target === elements.autosaveModal) {
+        closeAutosaveModal();
+      }
+    });
+  }
+
+  if (elements.settingsModal) {
+    elements.settingsModal.addEventListener('click', (event) => {
+      if (event.target === elements.settingsModal) {
+        closeSettingsModal();
       }
     });
   }
@@ -309,6 +346,24 @@ function handleAction(action) {
   }
   if (action === 'restore-latest-draft') {
     restoreLatestDraft();
+  }
+  if (action === 'open-autosave-modal') {
+    openAutosaveModal();
+  }
+  if (action === 'close-autosave-modal') {
+    closeAutosaveModal();
+  }
+  if (action === 'open-settings-modal') {
+    openSettingsModal();
+  }
+  if (action === 'close-settings-modal') {
+    closeSettingsModal();
+  }
+  if (action === 'save-settings') {
+    persistSettings('Settings saved');
+  }
+  if (action === 'reset-settings') {
+    resetSettingsToDefaults();
   }
   if (action === 'duplicate-template') {
     pushUndoSnapshot();
@@ -401,6 +456,57 @@ function updateLayoutField(control) {
   scheduleAutosave('Layout updated');
   applyLayout(state.layout);
   saveLayout(state.layout);
+}
+
+function updateSettingField(control) {
+  const fieldName = control.dataset.settingField;
+  if (!fieldName) {
+    return;
+  }
+  const value = control.type === 'checkbox' ? control.checked : control.value;
+  appSettings = normalizeSettings({ ...appSettings, [fieldName]: value });
+  persistSettings('Settings updated', { quiet: true });
+}
+
+function syncSettingsControls() {
+  elements.settingsControls.forEach((control) => {
+    const fieldName = control.dataset.settingField;
+    if (!fieldName) {
+      return;
+    }
+    if (control.type === 'checkbox') {
+      control.checked = Boolean(appSettings[fieldName]);
+      return;
+    }
+    control.value = String(appSettings[fieldName] ?? '');
+  });
+  renderSettingsSummary();
+}
+
+function persistSettings(message = 'Settings saved', options = {}) {
+  appSettings = saveSettings(appSettings);
+  syncSettingsControls();
+  refreshAutosaveTimerForSettings();
+  if (!options.quiet) {
+    setStatus(message);
+  }
+}
+
+function resetSettingsToDefaults() {
+  appSettings = resetStoredSettings();
+  syncSettingsControls();
+  refreshAutosaveTimerForSettings();
+  setStatus('Settings reset to defaults');
+}
+
+function renderSettingsSummary() {
+  const summary = getSettingsSummary(appSettings);
+  if (elements.settingsSummary) {
+    elements.settingsSummary.textContent = summary;
+  }
+  if (elements.autosaveMeta) {
+    elements.autosaveMeta.textContent = `${summary} Recovery sessions are stored locally in this browser.`;
+  }
 }
 
 function addItem() {
@@ -720,6 +826,10 @@ async function recoverDraft() {
     setAutosaveStatus('Storage unavailable');
     return;
   }
+  if (!appSettings.restoreDraftOnStartup) {
+    setAutosaveStatus('Draft recovery paused');
+    return;
+  }
   try {
     const draft = await loadDraft();
     if (draft) {
@@ -739,26 +849,63 @@ function scheduleAutosave(reason = 'Auto-save') {
   if (!readyForAutosave || !isIndexedDbAvailable()) {
     return;
   }
-  setAutosaveStatus('Saving...');
-  window.clearTimeout(autosaveTimeoutId);
-  autosaveTimeoutId = window.setTimeout(() => performAutosave(reason), 700);
+  if (!appSettings.autosaveEnabled) {
+    clearAutosaveTimer();
+    setAutosaveStatus('Auto-save off');
+    return;
+  }
+
+  const currentSignature = createAutosaveSignature();
+  if (currentSignature === lastSavedSignature) {
+    autosaveDirty = false;
+    setAutosaveStatus(getAutosaveReadyMessage());
+    return;
+  }
+
+  autosaveDirty = true;
+  pendingAutosaveReason = reason;
+  if (!autosaveTimeoutId) {
+    autosaveTimeoutId = window.setTimeout(() => performAutosave(pendingAutosaveReason), getAutosaveIntervalMs(appSettings));
+  }
+  setAutosaveStatus(`Unsaved changes - auto-save in ${appSettings.autosaveIntervalMinutes} min`);
 }
 
 async function performAutosave(reason) {
+  window.clearTimeout(autosaveTimeoutId);
+  autosaveTimeoutId = 0;
+  if (!readyForAutosave || !isIndexedDbAvailable() || !appSettings.autosaveEnabled) {
+    return;
+  }
+  if (!autosaveDirty) {
+    setAutosaveStatus(getAutosaveReadyMessage());
+    return;
+  }
+
   try {
     const validation = validateDocument(getState());
     if (!validation.valid) {
       setAutosaveStatus('Draft needs required fields');
       return;
     }
+    const savedSignature = createAutosaveSignature();
+    if (savedSignature === lastSavedSignature) {
+      autosaveDirty = false;
+      setAutosaveStatus(getAutosaveReadyMessage());
+      return;
+    }
+
+    setAutosaveStatus('Auto-saving...');
     await saveDraft(getState());
-    const now = Date.now();
-    if (now - lastVersionAt > 30000) {
-      await saveVersion(getState(), reason);
-      lastVersionAt = now;
+    if (appSettings.saveRecoveryVersions) {
+      await saveVersion(getState(), reason, { limit: appSettings.historyLimit });
       await refreshVersionList();
     }
-    setAutosaveStatus('Saved locally');
+    lastSavedSignature = savedSignature;
+    autosaveDirty = createAutosaveSignature() !== lastSavedSignature;
+    setAutosaveStatus(autosaveDirty ? `Saved locally - next auto-save in ${appSettings.autosaveIntervalMinutes} min` : 'Saved locally');
+    if (autosaveDirty) {
+      scheduleAutosave('Auto-save');
+    }
   } catch (error) {
     console.error(error);
     setAutosaveStatus('Save failed');
@@ -767,9 +914,12 @@ async function performAutosave(reason) {
 
 async function manualSaveVersion(reason = 'Manual version') {
   try {
+    const savedSignature = createAutosaveSignature();
     await saveDraft(getState());
-    await saveVersion(getState(), reason);
-    lastVersionAt = Date.now();
+    await saveVersion(getState(), reason, { limit: appSettings.historyLimit });
+    lastSavedSignature = savedSignature;
+    autosaveDirty = false;
+    clearAutosaveTimer();
     await refreshVersionList();
     setAutosaveStatus('Version saved');
     setStatus('Recoverable version saved');
@@ -783,15 +933,16 @@ async function refreshVersionList() {
   if (!elements.versionList || !isIndexedDbAvailable()) {
     return;
   }
-  cachedVersions = await listVersions(getState().documentId);
+  cachedVersions = await listVersions();
+  renderSettingsSummary();
   if (!cachedVersions.length) {
     elements.versionList.innerHTML = '<p class="empty-state">No previous versions yet.</p>';
     renderAnalytics();
     return;
   }
-  elements.versionList.innerHTML = cachedVersions.slice(0, 8).map((version) => `
+  elements.versionList.innerHTML = cachedVersions.slice(0, appSettings.historyLimit).map((version) => `
     <button class="version-item" type="button" data-version-id="${escapeHtml(version.id)}">
-      <span>${escapeHtml(version.reason || 'Version')}</span>
+      <span>${escapeHtml([version.reason || 'Version', version.type || 'document'].join(' - '))}</span>
       <strong>${escapeHtml(version.title || 'Document')} ${escapeHtml(version.number || '')}</strong>
       <small>${escapeHtml(new Date(version.savedAt).toLocaleString())}</small>
     </button>
@@ -824,9 +975,40 @@ async function restoreLatestDraft() {
 }
 
 function setAutosaveStatus(message) {
-  if (elements.autosaveStatus) {
-    elements.autosaveStatus.textContent = message;
+  elements.autosaveStatusElements.forEach((element) => {
+    element.textContent = message;
+  });
+}
+
+function clearAutosaveTimer() {
+  window.clearTimeout(autosaveTimeoutId);
+  autosaveTimeoutId = 0;
+}
+
+function refreshAutosaveTimerForSettings() {
+  renderSettingsSummary();
+  if (!readyForAutosave) {
+    return;
   }
+  if (!appSettings.autosaveEnabled) {
+    clearAutosaveTimer();
+    setAutosaveStatus('Auto-save off');
+    return;
+  }
+  if (autosaveDirty) {
+    clearAutosaveTimer();
+    scheduleAutosave(pendingAutosaveReason);
+    return;
+  }
+  setAutosaveStatus(getAutosaveReadyMessage());
+}
+
+function getAutosaveReadyMessage() {
+  return appSettings.autosaveEnabled ? `Auto-save ready (${appSettings.autosaveIntervalMinutes} min)` : 'Auto-save off';
+}
+
+function createAutosaveSignature() {
+  return JSON.stringify(getState());
 }
 
 function pushUndoSnapshot() {
@@ -957,10 +1139,51 @@ function reorderSection(sourceKey, targetKey) {
   setStatus('Document sections reordered');
 }
 
+async function openAutosaveModal() {
+  if (!elements.autosaveModal) {
+    return;
+  }
+  await refreshVersionList();
+  lastFocusedElement = document.activeElement;
+  elements.autosaveModal.hidden = false;
+  document.body.classList.add('is-modal-open');
+  elements.autosaveModal.querySelector('[data-action="restore-latest-draft"]')?.focus();
+}
+
+function closeAutosaveModal() {
+  if (!elements.autosaveModal || elements.autosaveModal.hidden) {
+    return;
+  }
+  elements.autosaveModal.hidden = true;
+  document.body.classList.remove('is-modal-open');
+  restoreLastFocus();
+}
+
+function openSettingsModal() {
+  if (!elements.settingsModal) {
+    return;
+  }
+  syncSettingsControls();
+  lastFocusedElement = document.activeElement;
+  elements.settingsModal.hidden = false;
+  document.body.classList.add('is-modal-open');
+  elements.settingsControls[0]?.focus();
+}
+
+function closeSettingsModal() {
+  if (!elements.settingsModal || elements.settingsModal.hidden) {
+    return;
+  }
+  elements.settingsModal.hidden = true;
+  document.body.classList.remove('is-modal-open');
+  restoreLastFocus();
+}
+
 function openCommandPalette() {
   if (!elements.commandPalette) {
     return;
   }
+  lastFocusedElement = document.activeElement;
   elements.commandPalette.hidden = false;
   document.body.classList.add('is-modal-open');
   renderCommandList('');
@@ -973,6 +1196,7 @@ function closeCommandPalette() {
   }
   elements.commandPalette.hidden = true;
   document.body.classList.remove('is-modal-open');
+  restoreLastFocus();
 }
 
 function renderCommandList(query = '') {
@@ -1063,17 +1287,17 @@ function closeExportModal() {
   }
   elements.exportModal.hidden = true;
   document.body.classList.remove('is-modal-open');
-  if (lastFocusedElement instanceof HTMLElement) {
-    lastFocusedElement.focus();
-  }
+  restoreLastFocus();
 }
 
-function trapExportModalFocus(event) {
-  if (!elements.exportModal || elements.exportModal.hidden) {
+function trapActiveModalFocus(event) {
+  const activeModal = [elements.exportModal, elements.autosaveModal, elements.settingsModal, elements.commandPalette]
+    .find((modal) => modal && !modal.hidden);
+  if (!activeModal) {
     return;
   }
 
-  const focusableElements = Array.from(elements.exportModal.querySelectorAll('button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])'))
+  const focusableElements = Array.from(activeModal.querySelectorAll('button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])'))
     .filter((element) => !element.disabled && element.offsetParent !== null);
   const firstElement = focusableElements[0];
   const lastElement = focusableElements[focusableElements.length - 1];
@@ -1088,6 +1312,13 @@ function trapExportModalFocus(event) {
     event.preventDefault();
     firstElement.focus();
   }
+}
+
+function restoreLastFocus() {
+  if (lastFocusedElement instanceof HTMLElement) {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
 }
 
 function collectExportOptions() {
@@ -1144,6 +1375,22 @@ async function importJson(file) {
 function exposeTestingApi() {
   window.StudioManager = {
     getState,
+    getSettings: () => ({ ...appSettings }),
+    updateSettings: (settings) => {
+      appSettings = saveSettings(normalizeSettings({ ...appSettings, ...settings }));
+      syncSettingsControls();
+      refreshAutosaveTimerForSettings();
+      return { ...appSettings };
+    },
+    getAutosaveDebug: () => ({
+      dirty: autosaveDirty,
+      timerActive: Boolean(autosaveTimeoutId),
+      intervalMs: getAutosaveIntervalMs(appSettings),
+      status: elements.autosaveStatusElements[0]?.textContent || '',
+      cachedVersions: cachedVersions.length,
+      settings: { ...appSettings },
+    }),
+    forceAutosave: (reason = 'Test auto-save') => performAutosave(reason),
     createExportEnvelope: () => createExportEnvelope(getState()),
     renderDocumentCanvas: (options) => renderDocumentCanvas(getState(), options),
     handleExport: (options) => handleExport(getState(), options, setStatus),

@@ -1,7 +1,7 @@
-import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-reference3';
-import { DEFAULT_PAPER_SIZE, getPaperSize } from './config.js?v=20260522-reference3';
-import { createExportEnvelope } from './schema.js?v=20260522-reference3';
-import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=20260522-reference3';
+import { renderDocumentCanvas } from './canvas-renderer.js?v=20260522-autosave-settings';
+import { DEFAULT_PAPER_SIZE, getPaperSize } from './config.js?v=20260522-autosave-settings';
+import { createExportEnvelope } from './schema.js?v=20260522-autosave-settings';
+import { canvasToBlob, collectCssText, dataUrlToBytes, downloadBlob, escapeHtml, getFileBaseName, imageToDataUrl } from './utils.js?v=20260522-autosave-settings';
 
 export async function handleExport(state, exportOptions = {}, setStatus = () => {}) {
   const format = exportOptions.format || 'pdf';

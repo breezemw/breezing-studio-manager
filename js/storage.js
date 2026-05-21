@@ -30,7 +30,7 @@ export async function loadDraft() {
   return record?.state || null;
 }
 
-export async function saveVersion(state, reason = 'Manual snapshot') {
+export async function saveVersion(state, reason = 'Manual snapshot', options = {}) {
   const db = await openDb();
   const record = {
     id: `${state.documentId || 'document'}-${Date.now()}`,
@@ -43,7 +43,7 @@ export async function saveVersion(state, reason = 'Manual snapshot') {
     state: JSON.parse(JSON.stringify(state)),
   };
   await putRecord(db, 'versions', record);
-  await trimVersions(db, state.documentId);
+  await trimVersions(db, state.documentId, Number(options.limit) || VERSION_LIMIT);
   return record;
 }
 
@@ -138,11 +138,11 @@ function getAllRecords(db, storeName) {
   });
 }
 
-async function trimVersions(db, documentId) {
+async function trimVersions(db, documentId, limit = VERSION_LIMIT) {
   const records = (await getAllRecords(db, 'versions'))
     .filter((record) => record.documentId === documentId)
     .sort((first, second) => String(second.savedAt).localeCompare(String(first.savedAt)));
-  const staleRecords = records.slice(VERSION_LIMIT);
+  const staleRecords = records.slice(Math.max(1, limit));
   if (!staleRecords.length) {
     return;
   }

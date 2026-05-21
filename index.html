@@ -31,6 +31,8 @@
         <button class="button button-soft" type="button" data-action="undo">Undo</button>
         <button class="button button-soft" type="button" data-action="redo">Redo</button>
         <button class="button button-soft" type="button" data-action="save-version">Save Draft</button>
+        <button class="button button-soft" type="button" data-action="open-autosave-modal">Autosaves</button>
+        <button class="button button-soft" type="button" data-action="open-settings-modal">Settings</button>
         <button class="button button-soft" type="button" data-action="print">Print</button>
         <button class="button button-soft" type="button" data-action="open-command-palette">Commands</button>
         <button class="button button-primary" type="button" data-action="open-export-modal">Export...</button>
@@ -109,21 +111,6 @@
           <input type="checkbox" data-layout-field="darkMode">
           <span>Dark mode workspace</span>
         </label>
-      </section>
-
-      <section class="panel-section">
-        <div class="section-title-row">
-          <div>
-            <p class="eyebrow">Auto-save & Recovery</p>
-            <h2>IndexedDB drafts</h2>
-          </div>
-          <span class="internal-badge" data-autosave-status>Offline ready</span>
-        </div>
-        <div class="utility-row compact-actions">
-          <button class="button button-soft" type="button" data-action="restore-latest-draft">Restore Latest</button>
-          <button class="button button-soft" type="button" data-action="save-version">Save Version</button>
-        </div>
-        <div class="version-list" data-version-list></div>
       </section>
 
       <section class="panel-section">
@@ -611,6 +598,81 @@
     </section>
   </div>
 
+  <div class="modal-backdrop" data-autosave-modal hidden>
+    <section class="autosave-modal" role="dialog" aria-modal="true" aria-labelledby="autosaveTitle">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Recovery Center</p>
+          <h2 id="autosaveTitle">Autosaved sessions</h2>
+        </div>
+        <button class="icon-button neutral" type="button" data-action="close-autosave-modal" aria-label="Close autosaved sessions">x</button>
+      </header>
+      <div class="autosave-body">
+        <div class="autosave-toolbar">
+          <span class="internal-badge" data-autosave-status>Auto-save ready</span>
+          <div class="utility-row compact-actions">
+            <button class="button button-soft" type="button" data-action="restore-latest-draft">Restore Latest</button>
+            <button class="button button-soft" type="button" data-action="save-version">Save Version</button>
+          </div>
+        </div>
+        <p class="autosave-meta" data-autosave-meta>Recovery sessions are stored locally in this browser.</p>
+        <div class="version-list" data-version-list></div>
+      </div>
+      <footer class="modal-actions">
+        <button class="button button-soft" type="button" data-action="close-autosave-modal">Close</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" data-settings-modal hidden>
+    <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Settings</p>
+          <h2 id="settingsTitle">Studio preferences</h2>
+        </div>
+        <button class="icon-button neutral" type="button" data-action="close-settings-modal" aria-label="Close settings">x</button>
+      </header>
+      <div class="settings-layout" data-settings-form>
+        <article class="settings-card">
+          <h3>Auto-save</h3>
+          <label class="checkbox-label"><input type="checkbox" data-setting-field="autosaveEnabled"><span>Auto-save changed documents</span></label>
+          <label>
+            <span>Auto-save Interval</span>
+            <select data-setting-field="autosaveIntervalMinutes">
+              <option value="5">Every 5 minutes</option>
+              <option value="10">Every 10 minutes</option>
+              <option value="15">Every 15 minutes</option>
+              <option value="20">Every 20 minutes</option>
+            </select>
+          </label>
+          <p class="settings-hint">The interval cannot go below 5 minutes or above 20 minutes.</p>
+        </article>
+        <article class="settings-card">
+          <h3>Recovery Sessions</h3>
+          <label class="checkbox-label"><input type="checkbox" data-setting-field="saveRecoveryVersions"><span>Keep recoverable autosave sessions</span></label>
+          <label>
+            <span>Sessions To Keep</span>
+            <select data-setting-field="historyLimit">
+              <option value="12">12 sessions</option>
+              <option value="20">20 sessions</option>
+              <option value="30">30 sessions</option>
+            </select>
+          </label>
+          <label class="checkbox-label"><input type="checkbox" data-setting-field="restoreDraftOnStartup"><span>Recover latest draft when opening the app</span></label>
+        </article>
+        <article class="settings-card settings-summary-card">
+          <h3>Current Behavior</h3>
+          <p data-settings-summary>Auto-save every 5 minutes when changes exist.</p>
+        </article>
+      </div>
+      <footer class="modal-actions">
+        <button class="button button-soft" type="button" data-action="reset-settings">Reset Defaults</button>
+        <button class="button button-primary" type="button" data-action="save-settings">Save Settings</button>
+      </footer>
+    </section>
+  </div>
+
   <div class="modal-backdrop" data-command-palette hidden>
     <section class="command-modal" role="dialog" aria-modal="true" aria-labelledby="commandTitle">
       <header class="modal-header">
@@ -632,6 +694,6 @@
 
   <button class="floating-controls" type="button" data-action="toggle-panel" aria-label="Open document controls">Controls</button>
 
-  <script type="module" src="script.js?v=20260522-reference3"></script>
+  <script type="module" src="script.js?v=20260522-autosave-settings"></script>
 </body>
 </html>

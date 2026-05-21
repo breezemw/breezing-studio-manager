@@ -1,5 +1,5 @@
-import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, DEFAULT_PAPER_SIZE, PREVIEW_DOCUMENT_WIDTH, getPaperSize } from './config.js?v=20260522-reference3';
-import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js?v=20260522-reference3';
+import { BASE_DOCUMENT_HEIGHT, BASE_DOCUMENT_WIDTH, DEFAULT_PAPER_SIZE, PREVIEW_DOCUMENT_WIDTH, getPaperSize } from './config.js?v=20260522-autosave-settings';
+import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, loadImage } from './utils.js?v=20260522-autosave-settings';
 
 let activeCanvasFontFamily = 'Arial, Helvetica, sans-serif';
 

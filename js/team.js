@@ -1,4 +1,4 @@
-import { escapeHtml } from './utils.js?v=20260522-reference3';
+import { escapeHtml } from './utils.js?v=20260522-autosave-settings';
 
 const defaultTeam = [
   { name: 'Team Member', role: 'Lead Photographer', phone: '', email: '', assignment: 'Coverage lead', status: 'Assigned' },
