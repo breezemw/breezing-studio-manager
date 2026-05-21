@@ -94,11 +94,36 @@ export function renderPreview(state, documentPreview, previewName) {
     </section>
 
     ${infoCards ? `<section class="${infoGridClass}">${infoCards}</section>` : ''}
+    ${sections.team ? renderTeamSection(state) : ''}
     ${sections.intro && state.intro ? `<section class="doc-intro"><p>${multilineHtml(state.intro)}</p></section>` : ''}
     ${sections.items ? renderItemsTable(state, totals, labels, currency) : ''}
     ${renderNotePaymentGrid(state, labels, sections)}
     ${sections.signature ? renderSignature(state, signatureImageMarkup) : ''}
     ${sections.footerBar ? '<div class="doc-footer-bar" aria-hidden="true"></div>' : ''}
+  `;
+}
+
+function renderTeamSection(state) {
+  const team = Array.isArray(state.team) ? state.team.filter((member) => member.name || member.role || member.assignment) : [];
+  if (!team.length) {
+    return '';
+  }
+
+  return `
+    <section class="doc-team">
+      <div class="doc-table-label">Production Team</div>
+      <div class="doc-team-grid">
+        ${team.map((member) => `
+          <article class="doc-team-member">
+            <span>${escapeHtml(member.status || 'Available')}</span>
+            <h3>${escapeHtml(member.name)}</h3>
+            <p>${escapeHtml(member.role)}</p>
+            ${member.assignment ? `<p>${multilineHtml(member.assignment)}</p>` : ''}
+            ${member.phone || member.email ? `<small>${escapeHtml([member.phone, member.email].filter(Boolean).join(' | '))}</small>` : ''}
+          </article>
+        `).join('')}
+      </div>
+    </section>
   `;
 }
 

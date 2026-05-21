@@ -3,8 +3,6 @@ export const BASE_DOCUMENT_WIDTH = 1240;
 export const BASE_DOCUMENT_HEIGHT = 1754;
 export const PREVIEW_DOCUMENT_WIDTH = 794;
 export const STORAGE_KEY = 'breezing-studio-manager-layout';
-export const ACCESS_STORAGE_KEY = 'breezing-studio-manager-access';
-export const ACCESS_CODE_HASH = '221e45e701886c3d9e5f12e5d7d0d2cb5ded7bbb785b1f1e26732c9d42369793';
 
 export const defaultBusiness = {
   name: 'BREEZING PICTURES',
@@ -32,6 +30,7 @@ export const defaultSections = {
   intro: true,
   client: true,
   business: true,
+  team: true,
   items: true,
   notes: true,
   payment: true,

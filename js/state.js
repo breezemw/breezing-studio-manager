@@ -1,4 +1,5 @@
 import { DEFAULT_LOGO_SRC, defaultBusiness, defaultLabels, defaultLayout, defaultSections, sharedDocumentDefaults, templates } from './config.js';
+import { createDefaultTeam, normalizeTeamMember } from './team.js';
 import { cloneData } from './utils.js';
 
 const store = {
@@ -18,11 +19,13 @@ export function createState(type, previousState = {}) {
   const template = cloneData(templates[type] || templates.invoice);
   const previousBusiness = previousState.business || defaultBusiness;
   const previousLayout = previousState.layout || defaultLayout;
+  const previousTeam = Array.isArray(previousState.team) ? previousState.team.map(normalizeTeamMember) : createDefaultTeam();
 
   return {
     ...sharedDocumentDefaults,
     ...template,
     business: { ...cloneData(defaultBusiness), ...cloneData(previousBusiness) },
+    team: previousTeam,
     labels: { ...cloneData(defaultLabels), ...cloneData(template.labels || {}) },
     sections: { ...cloneData(defaultSections), ...cloneData(previousState.sections || {}) },
     layout: { ...cloneData(defaultLayout), ...cloneData(previousLayout) },
@@ -51,6 +54,7 @@ export function normalizeImportedState(importedState = {}) {
     labels: { ...cloneData(defaultLabels), ...cloneData(baseState.labels || {}), ...cloneData(importedState.labels || {}) },
     sections: { ...cloneData(defaultSections), ...cloneData(importedState.sections || {}) },
     layout: { ...cloneData(defaultLayout), ...cloneData(importedState.layout || {}) },
+    team: Array.isArray(importedState.team) && importedState.team.length ? importedState.team.map(normalizeTeamMember) : createDefaultTeam(),
     items: Array.isArray(importedState.items) && importedState.items.length ? importedState.items.map(normalizeItem) : baseState.items,
     logoSrc: importedState.logoSrc || DEFAULT_LOGO_SRC,
     signatureSrc: importedState.signatureSrc || '',

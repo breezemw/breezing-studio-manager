@@ -3,9 +3,10 @@ import { calculateTotals, formatDate, formatMoney, getItemTotal, isPaidStatus, l
 
 export async function renderDocumentCanvas(state, options = {}) {
   const exportScale = Number(options.scale) || 2;
+  const documentHeight = estimateCanvasHeight(state);
   const canvas = document.createElement('canvas');
   canvas.width = BASE_DOCUMENT_WIDTH * exportScale;
-  canvas.height = BASE_DOCUMENT_HEIGHT * exportScale;
+  canvas.height = documentHeight * exportScale;
   const context = canvas.getContext('2d');
   context.scale(exportScale, exportScale);
 
@@ -20,10 +21,10 @@ export async function renderDocumentCanvas(state, options = {}) {
   const fontScale = Number(state.fontScale) || 1;
 
   context.fillStyle = paperColor;
-  context.fillRect(0, 0, BASE_DOCUMENT_WIDTH, BASE_DOCUMENT_HEIGHT);
+  context.fillRect(0, 0, BASE_DOCUMENT_WIDTH, documentHeight);
 
   if (state.showWatermark && state.watermarkSrc) {
-    await drawWatermark(context, state);
+    await drawWatermark(context, state, documentHeight);
   }
 
   context.fillStyle = darkColor;
@@ -64,6 +65,10 @@ export async function renderDocumentCanvas(state, options = {}) {
   currentY += 182;
   currentY = drawInfoCards(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale);
 
+  if (state.sections.team) {
+    currentY = drawTeamSection(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale);
+  }
+
   if (state.sections.intro && state.intro) {
     drawRoundRect(context, margin, currentY, contentWidth, 90, 12, '#eef3f8', '#cfd9e5', 2);
     context.fillStyle = accentColor;
@@ -86,12 +91,74 @@ export async function renderDocumentCanvas(state, options = {}) {
 
   if (state.sections.footerBar) {
     context.fillStyle = accentColor;
-    context.fillRect(0, BASE_DOCUMENT_HEIGHT - 22, BASE_DOCUMENT_WIDTH, 6);
+    context.fillRect(0, documentHeight - 22, BASE_DOCUMENT_WIDTH, 6);
     context.fillStyle = darkColor;
-    context.fillRect(0, BASE_DOCUMENT_HEIGHT - 16, BASE_DOCUMENT_WIDTH, 16);
+    context.fillRect(0, documentHeight - 16, BASE_DOCUMENT_WIDTH, 16);
   }
 
   return canvas;
+}
+
+function estimateCanvasHeight(state) {
+  const fontScale = Number(state.fontScale) || 1;
+  const itemRowsHeight = state.sections.items
+    ? state.items.reduce((sum, item) => {
+      const textLength = [item.title, item.category, item.name, item.description, item.notes].filter(Boolean).join(' ').length;
+      return sum + Math.max(66, Math.ceil(textLength / 68) * 23 * fontScale + 42);
+    }, 0)
+    : 0;
+  const footerRows = 1
+    + (state.discount ? 1 : 0)
+    + (state.extraCharge ? 1 : 0)
+    + (state.taxRate ? 1 : 0)
+    + ((state.type === 'receipt' || state.amountPaid) ? 2 : 0);
+  const tableHeight = state.sections.items ? 28 + 52 + itemRowsHeight + footerRows * 48 + 90 : 0;
+  const teamCount = state.sections.team && Array.isArray(state.team) ? state.team.filter((member) => member.name || member.role || member.assignment).length : 0;
+  const teamHeight = teamCount ? 38 + Math.ceil(teamCount / 2) * 152 + 20 : 0;
+  const infoHeight = state.sections.client || state.sections.business ? 284 : 0;
+  const introHeight = state.sections.intro && state.intro ? 118 : 0;
+  const noteHeight = state.sections.notes || state.sections.payment ? 226 : 0;
+  const signatureHeight = state.sections.signature ? 180 : 0;
+  const fixedChromeHeight = 438;
+  const estimatedHeight = fixedChromeHeight + infoHeight + teamHeight + introHeight + tableHeight + noteHeight + signatureHeight;
+  return Math.max(BASE_DOCUMENT_HEIGHT, Math.ceil(estimatedHeight + 90));
+}
+
+function drawTeamSection(context, state, margin, currentY, contentWidth, accentColor, darkColor, lineColor, fontScale) {
+  const team = Array.isArray(state.team) ? state.team.filter((member) => member.name || member.role || member.assignment) : [];
+  if (!team.length) {
+    return currentY;
+  }
+
+  drawText(context, 'PRODUCTION TEAM', margin, currentY, { size: 17 * fontScale, weight: '700', color: accentColor });
+  currentY += 28;
+
+  const cardGap = 16;
+  const columns = team.length === 1 ? 1 : 2;
+  const cardWidth = columns === 1 ? contentWidth : (contentWidth - cardGap) / 2;
+  let rowY = currentY;
+  let rowHeight = 0;
+
+  team.forEach((member, memberIndex) => {
+    const columnIndex = memberIndex % columns;
+    const cardX = margin + columnIndex * (cardWidth + cardGap);
+    const cardY = rowY;
+    const rows = [
+      { text: member.name, size: 21, weight: '700', color: darkColor },
+      { text: member.role, size: 18, weight: '700' },
+      { text: member.assignment, size: 17 },
+      { text: [member.phone, member.email].filter(Boolean).join(' | '), size: 15, weight: '700' },
+    ];
+    const cardHeight = 138;
+    drawDocumentCard(context, cardX, cardY, cardWidth, cardHeight, member.status || 'Available', rows, accentColor, '#ffffff', lineColor, fontScale);
+    rowHeight = Math.max(rowHeight, cardHeight);
+    if (columnIndex === columns - 1 || memberIndex === team.length - 1) {
+      rowY += rowHeight + 14;
+      rowHeight = 0;
+    }
+  });
+
+  return rowY + 10;
 }
 
 async function drawLogo(context, state, margin, currentY) {
@@ -119,7 +186,7 @@ async function drawLogo(context, state, margin, currentY) {
   return currentY + logoHeight + 28;
 }
 
-async function drawWatermark(context, state) {
+async function drawWatermark(context, state, documentHeight) {
   const watermarkImage = await loadImage(state.watermarkSrc).catch(() => null);
   if (!watermarkImage) {
     return;
@@ -130,7 +197,7 @@ async function drawWatermark(context, state) {
   const height = width * ratio;
   context.save();
   context.globalAlpha = Number(state.watermarkOpacity) || 0.06;
-  context.drawImage(watermarkImage, (BASE_DOCUMENT_WIDTH - width) / 2, (BASE_DOCUMENT_HEIGHT - height) / 2, width, height);
+  context.drawImage(watermarkImage, (BASE_DOCUMENT_WIDTH - width) / 2, (documentHeight - height) / 2, width, height);
   context.restore();
 }
 

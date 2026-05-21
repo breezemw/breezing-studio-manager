@@ -3,6 +3,7 @@ import { applyTemplate, createBlankItem, getState, resetCurrentTemplate, setStat
 import { handleExport } from './exporter.js';
 import { renderDocumentCanvas } from './canvas-renderer.js';
 import { renderPreview } from './preview.js';
+import { createBlankTeamMember, renderTeamEditorHtml } from './team.js';
 import { escapeHtml, fileToDataUrl, formatMoney, getFileBaseName, getItemTotal } from './utils.js';
 
 const numericFields = new Set([
@@ -23,12 +24,15 @@ const itemNumberFields = new Set(['quantity', 'unitPrice', 'discount']);
 
 let elements = {};
 let statusTimeoutId = 0;
+let renderFrameId = 0;
+let lastFocusedElement = null;
 
 export function initUi() {
   elements = collectElements();
   loadSavedLayout();
   syncControls();
   renderItemsEditor();
+  renderTeamEditor();
   renderAll();
   bindEvents();
   exposeTestingApi();
@@ -39,6 +43,7 @@ function collectElements() {
     documentPreview: document.querySelector('[data-document-preview]'),
     previewName: document.querySelector('[data-preview-name]'),
     itemsEditor: document.querySelector('[data-items-editor]'),
+    teamEditor: document.querySelector('[data-team-editor]'),
     statusMessage: document.querySelector('[data-status-message]'),
     importJsonInput: document.querySelector('[data-import-json]'),
     exportModal: document.querySelector('[data-export-modal]'),
@@ -57,6 +62,9 @@ function bindEvents() {
   elements.fieldControls.forEach((control) => {
     control.addEventListener('input', () => updateField(control));
     control.addEventListener('change', () => updateField(control));
+    if (control instanceof HTMLInputElement && control.type === 'number') {
+      control.inputMode = 'decimal';
+    }
   });
 
   elements.businessControls.forEach((control) => {
@@ -80,7 +88,8 @@ function bindEvents() {
       applyTemplate(button.dataset.template);
       syncControls();
       renderItemsEditor();
-      renderAll();
+      renderTeamEditor();
+      flushRender();
       setStatus(`${getState().title} template loaded`);
     });
   });
@@ -105,6 +114,22 @@ function bindEvents() {
     });
   }
 
+  if (elements.teamEditor) {
+    elements.teamEditor.addEventListener('input', (event) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        handleTeamInput(event.target);
+      }
+    });
+
+    elements.teamEditor.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-action="remove-team-member"]');
+      if (button) {
+        const teamRow = button.closest('[data-team-row]');
+        removeTeamMember(Number(teamRow.dataset.teamRow));
+      }
+    });
+  }
+
   document.addEventListener('click', (event) => {
     const actionButton = event.target.closest('[data-action]');
     const exportButton = event.target.closest('[data-export]');
@@ -121,6 +146,9 @@ function bindEvents() {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeExportModal();
+    }
+    if (event.key === 'Tab') {
+      trapExportModalFocus(event);
     }
   });
 
@@ -149,6 +177,9 @@ function handleAction(action) {
   if (action === 'add-item') {
     addItem();
   }
+  if (action === 'add-team-member') {
+    addTeamMember();
+  }
   if (action === 'reset-logo') {
     resetLogo();
   }
@@ -156,7 +187,8 @@ function handleAction(action) {
     resetCurrentTemplate();
     syncControls();
     renderItemsEditor();
-    renderAll();
+    renderTeamEditor();
+    flushRender();
     setStatus('New document created');
   }
   if (action === 'toggle-panel') {
@@ -191,7 +223,7 @@ function updateField(control) {
     state[fieldName] = control.value;
   }
 
-  renderAll();
+  scheduleRender();
 }
 
 function updateNestedField(groupName, fieldName, value) {
@@ -200,13 +232,13 @@ function updateNestedField(groupName, fieldName, value) {
     return;
   }
   state[groupName][fieldName] = value;
-  renderAll();
+  scheduleRender();
 }
 
 function updateSectionField(fieldName, checked) {
   const state = getState();
   state.sections[fieldName] = checked;
-  renderAll();
+  scheduleRender();
 }
 
 function updateLayoutField(control) {
@@ -225,7 +257,7 @@ function addItem() {
   const state = getState();
   state.items.push(createBlankItem());
   renderItemsEditor();
-  renderAll();
+  flushRender();
   setStatus('Item added');
 }
 
@@ -237,7 +269,7 @@ function removeItem(itemIndex) {
     state.items.splice(itemIndex, 1);
   }
   renderItemsEditor();
-  renderAll();
+  flushRender();
   setStatus('Item removed');
 }
 
@@ -260,7 +292,45 @@ function handleItemInput(target) {
   if (totalOutput) {
     totalOutput.textContent = formatMoney(getItemTotal(item), state.currency);
   }
-  renderAll();
+  scheduleRender();
+}
+
+function addTeamMember() {
+  const state = getState();
+  state.team.push(createBlankTeamMember());
+  renderTeamEditor();
+  flushRender();
+  setStatus('Team member added');
+}
+
+function removeTeamMember(memberIndex) {
+  const state = getState();
+  if (state.team.length === 1) {
+    state.team[0] = createBlankTeamMember();
+  } else {
+    state.team.splice(memberIndex, 1);
+  }
+  renderTeamEditor();
+  flushRender();
+  setStatus('Team member removed');
+}
+
+function handleTeamInput(target) {
+  const teamRow = target.closest('[data-team-row]');
+  if (!teamRow) {
+    return;
+  }
+
+  const state = getState();
+  const memberIndex = Number(teamRow.dataset.teamRow);
+  const fieldName = target.dataset.teamField;
+  const member = state.team[memberIndex];
+  if (!member || !fieldName) {
+    return;
+  }
+
+  member[fieldName] = target.value;
+  scheduleRender();
 }
 
 async function handleImageInput(input) {
@@ -284,7 +354,7 @@ async function handleImageInput(input) {
     state.showWatermark = true;
   }
   syncControls();
-  renderAll();
+  flushRender();
   setStatus(`${imageType} updated`);
 }
 
@@ -295,7 +365,7 @@ function resetLogo() {
   state.logoMaxHeight = 112;
   state.logoAlign = 'center';
   syncControls();
-  renderAll();
+  flushRender();
   setStatus('Default logo restored');
 }
 
@@ -311,10 +381,10 @@ function renderItemsEditor() {
         <label class="wide"><span>Category</span><input type="text" value="${escapeHtml(item.category)}" data-item-field="category"></label>
         <label class="wide"><span>Title</span><input type="text" value="${escapeHtml(item.title)}" data-item-field="title"></label>
         <label class="wide"><span>Name</span><input type="text" value="${escapeHtml(item.name)}" data-item-field="name"></label>
-        <label><span>Qty</span><input type="number" min="0" step="0.01" value="${Number(item.quantity) || 0}" data-item-field="quantity"></label>
+        <label><span>Qty</span><input type="number" min="0" step="0.01" inputmode="decimal" value="${Number(item.quantity) || 0}" data-item-field="quantity"></label>
         <label><span>Unit</span><input type="text" value="${escapeHtml(item.unit)}" data-item-field="unit"></label>
-        <label><span>Rate</span><input type="number" min="0" step="1" value="${Number(item.unitPrice) || 0}" data-item-field="unitPrice"></label>
-        <label><span>Discount</span><input type="number" min="0" step="1" value="${Number(item.discount) || 0}" data-item-field="discount"></label>
+        <label><span>Rate</span><input type="number" min="0" step="1" inputmode="decimal" value="${Number(item.unitPrice) || 0}" data-item-field="unitPrice"></label>
+        <label><span>Discount</span><input type="number" min="0" step="1" inputmode="decimal" value="${Number(item.discount) || 0}" data-item-field="discount"></label>
         <output class="item-total" data-item-total>${formatMoney(getItemTotal(item), state.currency)}</output>
         <label class="full"><span>Description</span><textarea rows="2" data-item-field="description">${escapeHtml(item.description)}</textarea></label>
         <label class="full"><span>Notes</span><textarea rows="2" data-item-field="notes">${escapeHtml(item.notes)}</textarea></label>
@@ -322,6 +392,15 @@ function renderItemsEditor() {
       <button class="icon-button" type="button" aria-label="Remove item" data-action="remove-item">x</button>
     </div>
   `).join('');
+}
+
+function renderTeamEditor() {
+  const state = getState();
+  if (!elements.teamEditor) {
+    return;
+  }
+
+  elements.teamEditor.innerHTML = renderTeamEditorHtml(state.team || []);
 }
 
 function syncControls() {
@@ -358,7 +437,9 @@ function syncControls() {
   });
 
   elements.templateButtons.forEach((button) => {
-    button.classList.toggle('is-active', button.dataset.template === state.type);
+    const isActive = button.dataset.template === state.type;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-selected', String(isActive));
   });
 
   applyLayout(state.layout);
@@ -366,9 +447,25 @@ function syncControls() {
 }
 
 function renderAll() {
+  renderFrameId = 0;
   const state = getState();
   renderPreview(state, elements.documentPreview, elements.previewName);
   syncExportFileName();
+}
+
+function scheduleRender() {
+  if (renderFrameId) {
+    return;
+  }
+  renderFrameId = window.requestAnimationFrame(renderAll);
+}
+
+function flushRender() {
+  if (renderFrameId) {
+    window.cancelAnimationFrame(renderFrameId);
+    renderFrameId = 0;
+  }
+  renderAll();
 }
 
 function setStatus(message) {
@@ -429,6 +526,8 @@ function openExportModal() {
   if (!elements.exportModal) {
     return;
   }
+  flushRender();
+  lastFocusedElement = document.activeElement;
   syncExportFileName();
   elements.exportModal.hidden = false;
   document.body.classList.add('is-modal-open');
@@ -442,6 +541,31 @@ function closeExportModal() {
   }
   elements.exportModal.hidden = true;
   document.body.classList.remove('is-modal-open');
+  if (lastFocusedElement instanceof HTMLElement) {
+    lastFocusedElement.focus();
+  }
+}
+
+function trapExportModalFocus(event) {
+  if (!elements.exportModal || elements.exportModal.hidden) {
+    return;
+  }
+
+  const focusableElements = Array.from(elements.exportModal.querySelectorAll('button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])'))
+    .filter((element) => !element.disabled && element.offsetParent !== null);
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+  if (!firstElement || !lastElement) {
+    return;
+  }
+
+  if (event.shiftKey && document.activeElement === firstElement) {
+    event.preventDefault();
+    lastElement.focus();
+  } else if (!event.shiftKey && document.activeElement === lastElement) {
+    event.preventDefault();
+    firstElement.focus();
+  }
 }
 
 function collectExportOptions() {
@@ -466,6 +590,7 @@ function syncExportFileName() {
 
 async function runExport(options) {
   try {
+    flushRender();
     await handleExport(getState(), options, setStatus);
     if (options.format && options.format !== 'json') {
       closeExportModal();
@@ -482,7 +607,8 @@ async function importJson(file) {
     setState(JSON.parse(text));
     syncControls();
     renderItemsEditor();
-    renderAll();
+    renderTeamEditor();
+    flushRender();
     setStatus('Backup loaded');
   } catch (error) {
     console.error(error);
@@ -496,6 +622,7 @@ function exposeTestingApi() {
     renderDocumentCanvas: (options) => renderDocumentCanvas(getState(), options),
     handleExport: (options) => handleExport(getState(), options, setStatus),
     renderItemsEditor,
+    renderTeamEditor,
     renderAll,
   };
 }

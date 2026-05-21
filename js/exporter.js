@@ -122,7 +122,7 @@ async function exportWordDocument(state, fileBaseName, scale, quality, openAfter
 @page { size: A4; margin: 0; }
 body { margin: 0; background: #ffffff; }
 .page { width: 210mm; min-height: 297mm; margin: 0 auto; }
-img { display: block; width: 210mm; height: 297mm; object-fit: contain; }
+img { display: block; width: 210mm; height: auto; }
 </style>
 </head>
 <body>
@@ -161,6 +161,11 @@ function createPdfFromJpeg(jpegBytes, imageWidth, imageHeight) {
   const chunks = [];
   const offsets = [];
   let totalLength = 0;
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const renderedHeight = pageWidth * (imageHeight / imageWidth);
+  const pageCount = Math.max(1, Math.ceil(renderedHeight / pageHeight));
+  const imageObjectNumber = 2 * pageCount + 3;
 
   function appendString(value) {
     const bytes = encoder.encode(value);
@@ -178,30 +183,39 @@ function createPdfFromJpeg(jpegBytes, imageWidth, imageHeight) {
     appendString(`${objectNumber} 0 obj\n`);
   }
 
-  const pageWidth = 595.28;
-  const pageHeight = 841.89;
-  const content = `q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im1 Do\nQ`;
-
   appendString('%PDF-1.3\n');
   startObject(1);
   appendString('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
   startObject(2);
-  appendString('<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
-  startObject(3);
-  appendString(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n`);
-  startObject(4);
-  appendString(`<< /Length ${encoder.encode(content).length} >>\nstream\n${content}\nendstream\nendobj\n`);
-  startObject(5);
+  appendString(`<< /Type /Pages /Kids [${Array.from({ length: pageCount }, (_, index) => `${index + 3} 0 R`).join(' ')}] /Count ${pageCount} >>\nendobj\n`);
+
+  for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+    const pageObjectNumber = pageIndex + 3;
+    const contentObjectNumber = pageCount + 3 + pageIndex;
+    startObject(pageObjectNumber);
+    appendString(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im1 ${imageObjectNumber} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>\nendobj\n`);
+  }
+
+  for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+    const contentObjectNumber = pageCount + 3 + pageIndex;
+    const yOffset = -(pageIndex * pageHeight);
+    const content = `q\n${pageWidth} 0 0 ${renderedHeight} 0 ${yOffset} cm\n/Im1 Do\nQ`;
+    startObject(contentObjectNumber);
+    appendString(`<< /Length ${encoder.encode(content).length} >>\nstream\n${content}\nendstream\nendobj\n`);
+  }
+
+  startObject(imageObjectNumber);
   appendString(`<< /Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`);
   appendBytes(jpegBytes);
   appendString('\nendstream\nendobj\n');
 
   const xrefOffset = totalLength;
-  appendString('xref\n0 6\n0000000000 65535 f \n');
-  for (let objectNumber = 1; objectNumber <= 5; objectNumber += 1) {
+  const objectCount = imageObjectNumber;
+  appendString(`xref\n0 ${objectCount + 1}\n0000000000 65535 f \n`);
+  for (let objectNumber = 1; objectNumber <= objectCount; objectNumber += 1) {
     appendString(`${String(offsets[objectNumber]).padStart(10, '0')} 00000 n \n`);
   }
-  appendString(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+  appendString(`trailer\n<< /Size ${objectCount + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
 
   const pdfBytes = new Uint8Array(totalLength);
   let offset = 0;

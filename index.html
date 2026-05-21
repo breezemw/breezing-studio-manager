@@ -13,22 +13,6 @@
 <body data-panel-dock="left">
   <a class="skip-link" href="#workspace">Skip to workspace</a>
 
-  <section class="access-screen" data-access-screen aria-labelledby="accessTitle">
-    <div class="access-card">
-      <img src="assets/breezing-logo-web.png" alt="Breezing Pictures" width="720" height="194">
-      <p class="eyebrow">Studio Access</p>
-      <h1 id="accessTitle">Breezing Pictures Studio Manager</h1>
-      <form data-access-form>
-        <label>
-          <span>Access Code</span>
-          <input type="password" autocomplete="current-password" data-access-code>
-        </label>
-        <button class="button button-primary" type="submit">Open Studio Manager</button>
-      </form>
-      <p class="access-message" data-access-message role="alert"></p>
-    </div>
-  </section>
-
   <header class="app-header">
     <div class="top-rule" aria-hidden="true"></div>
     <div class="header-inner">
@@ -61,6 +45,7 @@
       <nav class="panel-jump" aria-label="Editor sections">
         <a href="#panel-document">Document</a>
         <a href="#panel-client">Client</a>
+        <a href="#panel-team">Team</a>
         <a href="#panel-items">Items</a>
         <a href="#panel-style">Style</a>
         <a href="#panel-images">Images</a>
@@ -76,10 +61,10 @@
         </div>
 
         <div class="template-tabs" role="tablist" aria-label="Choose document type">
-          <button class="template-tab is-active" type="button" data-template="invoice">Invoice</button>
-          <button class="template-tab" type="button" data-template="quotation">Quotation</button>
-          <button class="template-tab" type="button" data-template="inquiry">Inquiry</button>
-          <button class="template-tab" type="button" data-template="receipt">Receipt</button>
+          <button class="template-tab is-active" type="button" role="tab" aria-selected="true" data-template="invoice">Invoice</button>
+          <button class="template-tab" type="button" role="tab" aria-selected="false" data-template="quotation">Quotation</button>
+          <button class="template-tab" type="button" role="tab" aria-selected="false" data-template="inquiry">Inquiry</button>
+          <button class="template-tab" type="button" role="tab" aria-selected="false" data-template="receipt">Receipt</button>
         </div>
       </section>
 
@@ -209,19 +194,19 @@
         <div class="field-grid three-cols">
           <label>
             <span>Document Discount</span>
-            <input type="number" min="0" step="1" data-field="discount">
+            <input type="number" min="0" step="1" inputmode="decimal" data-field="discount">
           </label>
           <label>
             <span>Tax %</span>
-            <input type="number" min="0" step="0.01" data-field="taxRate">
+            <input type="number" min="0" step="0.01" inputmode="decimal" data-field="taxRate">
           </label>
           <label>
             <span>Paid</span>
-            <input type="number" min="0" step="1" data-field="amountPaid">
+            <input type="number" min="0" step="1" inputmode="decimal" data-field="amountPaid">
           </label>
           <label>
             <span>Extra Charge</span>
-            <input type="number" min="0" step="1" data-field="extraCharge">
+            <input type="number" min="0" step="1" inputmode="decimal" data-field="extraCharge">
           </label>
           <label>
             <span>Extra Label</span>
@@ -232,6 +217,17 @@
             <input type="text" data-field="paidLabel">
           </label>
         </div>
+      </section>
+
+      <section class="panel-section" id="panel-team">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Team Management</p>
+            <h2>Production team</h2>
+          </div>
+          <button class="button button-soft" type="button" data-action="add-team-member">Add Member</button>
+        </div>
+        <div class="team-editor" data-team-editor></div>
       </section>
 
       <section class="panel-section">
@@ -282,6 +278,7 @@
           <label class="checkbox-label"><input type="checkbox" data-section-field="intro"><span>Intro</span></label>
           <label class="checkbox-label"><input type="checkbox" data-section-field="client"><span>Client Card</span></label>
           <label class="checkbox-label"><input type="checkbox" data-section-field="business"><span>Business Card</span></label>
+          <label class="checkbox-label"><input type="checkbox" data-section-field="team"><span>Team</span></label>
           <label class="checkbox-label"><input type="checkbox" data-section-field="items"><span>Items Table</span></label>
           <label class="checkbox-label"><input type="checkbox" data-section-field="notes"><span>Notes</span></label>
           <label class="checkbox-label"><input type="checkbox" data-section-field="payment"><span>Payment</span></label>
@@ -347,11 +344,11 @@
         <div class="field-grid three-cols">
           <label>
             <span>Logo Width</span>
-            <input type="range" min="90" max="520" step="5" data-field="logoWidth">
+            <input type="range" min="90" max="520" step="5" inputmode="decimal" data-field="logoWidth">
           </label>
           <label>
             <span>Logo Height</span>
-            <input type="range" min="40" max="180" step="5" data-field="logoMaxHeight">
+            <input type="range" min="40" max="180" step="5" inputmode="decimal" data-field="logoMaxHeight">
           </label>
           <label>
             <span>Logo Align</span>
@@ -371,7 +368,7 @@
         <div class="field-grid two-cols">
           <label>
             <span>Signature Size</span>
-            <input type="range" min="60" max="360" step="5" data-field="signatureWidth">
+            <input type="range" min="60" max="360" step="5" inputmode="decimal" data-field="signatureWidth">
           </label>
           <label class="checkbox-label"><input type="checkbox" data-field="showSignature"><span>Show Signature Image</span></label>
         </div>
@@ -383,11 +380,11 @@
         <div class="field-grid three-cols">
           <label>
             <span>Watermark Width</span>
-            <input type="range" min="120" max="700" step="10" data-field="watermarkWidth">
+            <input type="range" min="120" max="700" step="10" inputmode="decimal" data-field="watermarkWidth">
           </label>
           <label>
             <span>Opacity</span>
-            <input type="range" min="0" max="0.25" step="0.01" data-field="watermarkOpacity">
+            <input type="range" min="0" max="0.25" step="0.01" inputmode="decimal" data-field="watermarkOpacity">
           </label>
           <label class="checkbox-label"><input type="checkbox" data-field="showWatermark"><span>Show Watermark</span></label>
         </div>
@@ -424,11 +421,11 @@
         <div class="field-grid two-cols">
           <label>
             <span>Font Scale</span>
-            <input type="range" min="0.82" max="1.16" step="0.01" data-field="fontScale">
+            <input type="range" min="0.82" max="1.16" step="0.01" inputmode="decimal" data-field="fontScale">
           </label>
           <label>
             <span>Page Padding</span>
-            <input type="range" min="36" max="82" step="2" data-field="pagePadding">
+            <input type="range" min="36" max="82" step="2" inputmode="decimal" data-field="pagePadding">
           </label>
         </div>
       </section>
